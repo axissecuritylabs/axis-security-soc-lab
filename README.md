@@ -197,11 +197,9 @@ Feature requests and curriculum feedback are also welcome via issues.
 
 **Axis Security Solutions**
 
-Cybersecurity consulting and career services firm delivering resume writing, LinkedIn optimization, interview preparation, workforce development, and onboarding guidance to cybersecurity professionals from entry level through senior. Clients span SOC, GRC, IAM, DFIR, cloud, and IT fields.
+Cybersecurity consulting and career services firm delivering resume writing, LinkedIn optimization, interview preparation, workforce development training, and onboarding guidance to cybersecurity professionals from entry level through senior. Clients span SOC, GRC, IAM, DFIR, cloud, and IT fields.
 
-Community: Black Girl Cybersecurity (BGC) co-admin
-
-Advisory: Global Impact Academy STEM Magnet High School, Atlanta — Cybersecurity Curriculum Development Committee Chair
+Led by Ciera Stroman, a cybersecurity professional with 8+ years in the technical field, specializing in defensive and offensive security domains. The Axis Security Solutions team is comprised of seasoned cybersecurity professionals across multiple disciplines to bridge the gap for hands on cybersecurity training and development. Our instructors and consultants come from diverse backgrounds and hold numerous educational accolades. Our team prioritizes in-house training with legitimate resources that align with today's threat landscape. 
 
 🌐 [axissecuritysolutions.com](https://axissecuritysolutions.com)
 
