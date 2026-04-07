@@ -202,6 +202,7 @@ Cybersecurity consulting and career services firm delivering resume writing, Lin
 Led by Ciera Stroman, a cybersecurity professional with 8+ years in the technical field, specializing in defensive and offensive security domains. The Axis Security Solutions team is comprised of seasoned cybersecurity professionals across multiple disciplines to bridge the gap for hands on cybersecurity training and development. Our instructors and consultants come from diverse backgrounds and hold numerous educational accolades. Our team prioritizes in-house training with legitimate resources that align with today's threat landscape. 
 
 🌐 [axissecuritysolutions.com](https://axissecuritysolutions.com)
+connec with Ciera here: [https://www.linkedin.com/in/cieracstroman/](url)
 
 *"Axis Security Solutions" is not licensed under CC0 and may not be used to endorse derivative works or imply affiliation without written permission.*
 
