@@ -203,7 +203,7 @@ Led by Ciera Stroman, a cybersecurity professional with 8+ years in the technica
 
 🌐 [axissecuritysolutions.com](https://axissecuritysolutions.com)
 
-connect with Ciera here: [https://www.linkedin.com/in/cieracstroman/](url)
+connect with Ciera here: [https://www.linkedin.com/in/cieracstroman/]
 
 *"Axis Security Solutions" is not licensed under CC0 and may not be used to endorse derivative works or imply affiliation without written permission.*
 
