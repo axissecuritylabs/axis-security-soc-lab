@@ -5,6 +5,7 @@
 No installation. No account. No backend. No data collection. Open the link and start training.
 
 🔗 **Live Platform:** https://axissecuritylabs.github.io/axis-security-soc-lab/
+📖 **User Guide:** [Read the full documentation](https://github.com/axissecuritylabs/axis-security-soc-lab/wiki)
 
 ---
 
