@@ -4,7 +4,7 @@
 
 No installation. No account. No backend. No data collection. Open the link and start training.
 
-🔗 **Live Platform:** (https://axissecuritylabs.github.io/axis-security-soc-lab/)
+🔗 **Live Platform:** https://axissecuritylabs.github.io/axis-security-soc-lab/
 
 ---
 
@@ -28,13 +28,33 @@ State is managed entirely through localStorage — your alert decisions, case fi
 
 ## Feature Breakdown
 
+### Readiness Assessment — Trial Alert Gate
+
+Before accessing the alert queue, every analyst completes a tier-specific readiness trial. The trial cannot be skipped and must be completed with the correct triage decision before the queue unlocks.
+
+- **Tier 1 Trial** — A medium-severity phishing alert: typosquatted sender domain, high Proofpoint confidence score, and a credential harvesting URL. Correct decision: Escalate. Failure routes back to the Analyst Guide.
+- **Tier 2 Trial** — A high-severity EDR alert: Office macro spawning encoded PowerShell at 2 AM, unsigned binary dropped to AppData, active C2 beacon on port 4444. Correct decision: Escalate. Failure routes to Tier 1.
+
+Both trials present raw log data, five structured investigation questions with hints, and analyst coaching on the key indicators. Written answers are required before decision buttons activate.
+
+---
+
+### Platform Walkthrough
+
+On first entry to the alert queue, a 15-step guided tour launches automatically. Each step spotlights a section of the platform with a pulsing cyan highlight ring and a tooltip explaining what the section is for and when to use it. Back and Next buttons allow free movement through the steps. A Skip Tour link appears on the first step. The walkthrough runs once and is stored locally — it does not repeat on subsequent sessions.
+
+---
+
 ### Alert Queue
+
 The core of the platform. 76+ realistic alerts spanning Tier 1 and Tier 2 categories. Each alert presents a raw log block mirroring what you would see in a real SIEM — Proofpoint, CrowdStrike Falcon, Azure AD, Zscaler, Sysmon, and more.
 
 **Workflow per alert:**
+- Claim the ticket (top of the Triage tab) to start the investigation timer and open the decision row
 - Read the raw log and correlated sim log timeline
 - Fill in structured enrichment fields: source IP, destination, host, user, process, analyst notes
 - Navigate four tabs: Triage, Investigation, MITRE + CTI, Detection Tuning
+- Write a mandatory escalation handoff note when escalating Critical or High severity alerts
 - Make a decision: Escalate, Investigating, False Positive, or Needs Monitoring
 - Receive coaching on your decision with TP/FP rate context and technique explanation
 
@@ -53,24 +73,34 @@ The core of the platform. 76+ realistic alerts spanning Tier 1 and Tier 2 catego
 
 Each alert includes MITRE ATT&CK technique mapping, threat actor associations, enrichment tool guidance, and a structured investigation checklist.
 
+**Queue interactivity:**
+- Live SIEM-style alert ticker in the topbar rotates simulated alert messages to add ambient realism
+- Alert aging badges flag tickets that have been claimed but not decided within 5 minutes
+- Investigation timer starts on ticket claim and color-codes green, orange, and red as time increases
+- Coaching reactions are tuned to alert severity — incorrect decisions on Critical alerts trigger more urgent feedback
+
 ---
 
 ### Interactive Investigation Checklist
+
 Every alert has a task-gated investigation checklist. Steps cannot be marked complete by clicking a checkbox — you must write a substantive answer to a contextual question first. Minimum character count is enforced. Completing each step reveals a coaching panel explaining why that step matters operationally and what it reveals about the attack.
 
 ---
 
 ### File Viewer
+
 Applicable alerts include an intercepted file tab that opens a simulated file viewer. DLP alerts show spreadsheet content with flagged columns highlighted by severity — CRITICAL for SSN fields, HIGH for salary data. Malware alerts show decoded PowerShell payloads with dangerous functions highlighted: `DownloadString`, `Invoke-Expression`, `Register-ScheduledTask`. DLP violation summaries appear below the file with per-finding explanations.
 
 ---
 
 ### Network Connection Maps
+
 Applicable alerts include an SVG network diagram showing the full connection path: source endpoint → proxy → external destination, with threat labels, edge annotations, port/volume data, and a timestamped connection timeline. Used on geo-anomaly identity alerts, C2 beaconing cases, and lateral movement kill chains.
 
 ---
 
 ### Incident Response Console
+
 Escalated alerts funnel into a full IR lifecycle simulation following the NIST SP 800-61 framework.
 
 **Four phases, each gated by completion of the prior:**
@@ -91,11 +121,20 @@ Escalated alerts funnel into a full IR lifecycle simulation following the NIST S
 
 Every keystroke auto-saves the draft. Word counts update live. Submission is gated — all six sections must meet minimums. Submitted reports appear in the Portfolio Builder.
 
+**Interactive IR features added in the current release:**
+- **IR Severity Clock** — live elapsed timer color-coded against breach notification windows by severity (1 hour Critical, 4 hours High, 24 hours Medium). Progress bar shifts from green to orange to red as the window approaches.
+- **Live Scope Tracker** — IOC chips for every host, user, IP, domain, and hash in scope show ACTIVE (red, pulsing) or CONTAINED (green) status in real time as actions are applied or reversed.
+- **Visual Case Timeline** — chronological dot timeline of every action taken, colored by phase, with reversed actions shown as strikethrough entries.
+- **Simulated IR Team Comms** — realistic stakeholder messages from IR Lead, CISO, Legal, HR, IT Ops, and Threat Intel triggered by specific actions and phase transitions.
+- **Phase Completion Summary** — gated advance that shows what you accomplished in the current phase and flags recommended actions you skipped before allowing you to proceed.
+- **Endpoint Monitor cross-update** — IR containment actions update endpoint status in real time if the Endpoint Monitor view is open.
+
 **Action log** — A running timestamped record of every action taken across all IR cases in the session, including reversals shown with strikethrough.
 
 ---
 
 ### Detection Engineering Lab
+
 Three fully interactive guided demos plus independent practice tabs for writing and tuning rules.
 
 **Demo 1: Office Macro Spawning PowerShell (T1059.001)**
@@ -110,41 +149,73 @@ Same format. Event 4698 and Sysmon Event 13 data source selection. Path-based be
 ---
 
 ### Threat Hunt Lab
+
 Five hunt categories: Credential Access, Lateral Movement, Persistence, Exfiltration, and C2. Each hunt presents a hypothesis, correlated log data with Sysmon event timelines, and structured questions requiring written answers. Validation hints reveal after each step.
 
 ---
 
 ### Forensics Lab
+
 Seven tabs: Introduction, Memory Forensics, Log Analysis, YARA Rule Writing (eight exercises), Network Forensics, Cloud Forensics, and Automation. YARA exercises require writing functional rule syntax. Validation checks the structure before marking complete.
 
 ---
 
+### Scorecard
+
+Live performance dashboard tracking:
+- **Triage accuracy** — percentage of decisions matching the expected verdict
+- **Severity-weighted score** — accuracy weighted by alert severity (Critical 4x, High 3x, Medium 2x, Low 1x)
+- **False positive rate** — including count of True Positives incorrectly closed as FP
+- **Escalation rate** — compared against the beta cohort average
+- **Mean time to decision** — computed from actual ticket claim and verdict timestamps
+- **Investigation depth** — percentage of checklist steps completed across all worked alerts
+- **Streak tracking** — current correct decision streak and personal best
+- **Per-category accuracy** — bar chart across all seven detection domains with warning flags on weak categories
+- **Peer comparison** — your metrics against anonymized averages from the beta cohort with color-coded deltas
+- **Coaching tips** — generated from your specific performance patterns and updated as decisions accumulate
+
+---
+
 ### Endpoint Activity Monitor
-Eight endpoints drawn directly from the alert library: CORP-WKS-033, WKS-FINANCE-007, DC01, HR-WKS-012, EXEC-WKS-002, SALES-WKS-023, FILE-SVR-01, and LEGAL-WKS-031. Each card shows live status computed from current alert state — a COMPROMISED endpoint clears to CLEAN with a green resolved banner when all associated alerts are closed as false positive. Expandable cards show suspicious process lists, timestamped activity timelines, containment status, and direct links that open the associated alert modal.
+
+Eight endpoints drawn directly from the alert library: CORP-WKS-033, WKS-FINANCE-007, DC01, HR-WKS-012, EXEC-WKS-002, SALES-WKS-023, FILE-SVR-01, and LEGAL-WKS-031. Each card shows live status computed from current alert state — a COMPROMISED endpoint clears to CLEAN with a green resolved banner when all associated alerts are closed as false positive. Expandable cards show suspicious process lists, timestamped activity timelines, containment status, and direct links that open the associated alert modal. IR Console containment actions update endpoint status in real time.
 
 ---
 
 ### Identity Dashboard
+
 47 user profiles across all departments. Risk scoring is computed live from alert state — profiles under active alert show ALERT status in red, profiles whose alerts have been resolved clear to NORMAL automatically. Department filter tabs (12 departments) compose with the search bar. Each card shows role, account type, MFA method, typical hours, risk indicators, analyst context notes, and clickable alert references. Alert count badges on card headers make the dashboard scannable before expanding.
 
 ---
 
 ### MITRE ATT&CK Navigator
-Color-coded heatmap showing technique coverage across your triaged alerts. Each tactic column uses a distinct color. Covered techniques highlight in the tactic color. Total coverage count shown. Full technique detail view on the MITRE + CTI tab inside each alert modal.
+
+Color-coded heatmap showing technique coverage across your triaged alerts. Each tactic column uses a distinct color. Covered techniques highlight in the tactic color. Total coverage count shown. Every technique cell links directly to the MITRE ATT&CK documentation page. Full technique detail view on the MITRE + CTI tab inside each alert modal.
 
 ---
 
 ### Workbench and Case Files
+
 Four completed demo case files (two T1, two T2) showing what a fully documented investigation looks like — complete timeline, enrichment summary, IOC extraction, containment actions, and analyst notes. Your active cases populate below the demo cases as you work alerts.
 
 ---
 
 ### Portfolio Builder
+
 Generates a formatted professional summary of your training activity: alerts triaged, MITRE techniques covered, false positive identification rate, case files documented, and a LinkedIn-ready paragraph you can adapt for your profile or use in interview prep conversations.
 
 ---
 
+### Platform Navigation
+
+A hamburger menu button (☰) in the top bar collapses the sidebar with a smooth CSS transition, giving the main content area full width. Useful for the IR Console and wide alert tables. The button turns cyan when collapsed and collapse state persists across navigation within the session.
+
+A Feedback button sits permanently in the top bar. Opens a structured panel with section, feedback type (Bug, Unclear, Feature Idea, General), free-text message, tier, and optional name or email for follow-up. Submissions go directly to the Axis Security Solutions team. Anonymous submissions accepted.
+
+---
+
 ### Analyst Guide
+
 SOC fundamentals reference covering triage methodology, escalation criteria, enrichment tool usage, the IR lifecycle, and common interview topics organized by domain.
 
 ---
@@ -189,7 +260,7 @@ This platform is in open beta. Core features are stable. If you encounter a brok
 - What browser and device you were using
 - What you expected vs what happened
 
-Feature requests and curriculum feedback are also welcome via issues.
+Feature requests and curriculum feedback are also welcome via issues. You can also use the Feedback button inside the platform to submit directly to the Axis Security Solutions team.
 
 ---
 
@@ -199,11 +270,11 @@ Feature requests and curriculum feedback are also welcome via issues.
 
 Cybersecurity consulting and career services firm delivering resume writing, LinkedIn optimization, interview preparation, workforce development training, and onboarding guidance to cybersecurity professionals from entry level through senior. Clients span SOC, GRC, IAM, DFIR, cloud, and IT fields.
 
-Led by Ciera Stroman, a cybersecurity professional with 8+ years in the technical field, specializing in defensive and offensive security domains. The Axis Security Solutions team is comprised of seasoned cybersecurity professionals across multiple disciplines to bridge the gap for hands on cybersecurity training and development. Our instructors and consultants come from diverse backgrounds and hold numerous educational accolades. Our team prioritizes in-house training with legitimate resources that align with today's threat landscape. 
+Led by Ciera Stroman, a cybersecurity professional with 8+ years in the technical field, specializing in defensive and offensive security domains. The Axis Security Solutions team is comprised of seasoned cybersecurity professionals across multiple disciplines to bridge the gap for hands on cybersecurity training and development. Our instructors and consultants come from diverse backgrounds and hold numerous educational accolades. Our team prioritizes in-house training with legitimate resources that align with today's threat landscape.
 
 🌐 [axissecuritysolutions.com](https://axissecuritysolutions.com)
 
-connect with Ciera here: [https://www.linkedin.com/in/cieracstroman/]
+Connect with Ciera here: [https://www.linkedin.com/in/cieracstroman/]
 
 *"Axis Security Solutions" is not licensed under CC0 and may not be used to endorse derivative works or imply affiliation without written permission.*
 
