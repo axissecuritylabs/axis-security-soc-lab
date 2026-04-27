@@ -32,7 +32,10 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite;}
 @keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.4;}}
 /* SIDEBAR */
-#sidebar{position:fixed;top:var(--header-height);left:0;bottom:0;width:var(--nav-width);background:var(--bg-secondary);border-right:1px solid var(--border);overflow-y:auto;z-index:90;padding:16px 0;}
+#sidebar{position:fixed;top:var(--header-height);left:0;bottom:0;width:var(--nav-width);background:var(--bg-secondary);border-right:1px solid var(--border);overflow-y:auto;z-index:90;padding:16px 0;transition:transform 0.22s ease,width 0.22s ease;}
+#sidebar.collapsed{transform:translateX(-100%);}
+main{margin-left:var(--nav-width);margin-top:var(--header-height);padding:28px;min-height:calc(100vh - var(--header-height));overflow-x:hidden;transition:margin-left 0.22s ease;}
+main.sidebar-hidden{margin-left:0;}
 #sidebar::-webkit-scrollbar{width:3px;}
 #sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .nav-section-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;padding:12px 16px 6px;}
@@ -45,10 +48,10 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 
 .nav-badge.new-tag{border-color:var(--green);color:var(--green);font-size:9px;}
 /* MAIN */
-#main{margin-left:var(--nav-width);margin-top:var(--header-height);padding:28px;min-height:calc(100vh - var(--header-height));}
-.view{display:none;animation:fadeIn 0.2s ease;}
-.view.active{display:block;}
+.view{display:none !important;}
+.view.active{display:block !important;animation:fadeIn 0.2s ease;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes walkthroughPulse{0%,100%{box-shadow:0 0 0 4px rgba(0,212,255,0.15),0 0 20px rgba(0,212,255,0.2);}50%{box-shadow:0 0 0 6px rgba(0,212,255,0.25),0 0 28px rgba(0,212,255,0.3);}}
 /* PAGE HEADERS */
 .page-header{margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .page-title{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:1px;color:var(--text-primary);text-transform:uppercase;}
@@ -516,20 +519,30 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 <!-- TOP BAR -->
 <div id="topbar">
   <div class="topbar-logo"><div class="logo-icon">S</div>SOC Lab</div>
+  <button id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle navigation" style="background:transparent;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 10px;flex-shrink:0;line-height:1;" aria-label="Toggle sidebar">&#9776;</button>
   <div class="topbar-sep"></div>
+  <div id="alert-ticker" style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 16px;transition:opacity 0.3s;opacity:0.7;">&#9889; SIEM feed active</div>
   <div class="topbar-meta"><span>AXIS SECURITY SOLUTIONS</span><span id="topbar-analyst">ANALYST</span></div>
   <div class="topbar-right">
     <div class="live-indicator"><div class="live-dot"></div>LIVE ENV</div>
+    <button id="feedback-toggle-btn" onclick="toggleFeedbackPanel()" style="background:transparent;border:1px solid rgba(0,212,255,0.3);border-radius:2px;padding:4px 10px;font-family:var(--font-mono);font-size:10px;color:var(--accent);cursor:pointer;letter-spacing:0.5px;">&#128172; Feedback</button>
     <div class="tier-badge t1" id="tier-badge-display" onclick="toggleTier()">TIER 1</div>
   </div>
+</div>
+
+<!-- MOBILE WARNING BANNER -->
+<div id="mobile-warning-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#1a1a2e;border-bottom:2px solid var(--orange);padding:12px 16px;text-align:center;">
+  <div style="font-size:13px;color:var(--orange);font-weight:600;margin-bottom:4px;">&#128187; SOC Lab is optimized for desktop</div>
+  <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">Some features may be limited or hard to use on a small screen. For the best experience, open this on a laptop or desktop.</div>
+  <button onclick="dismissMobileBanner()" style="background:transparent;border:1px solid var(--orange);border-radius:2px;padding:5px 16px;font-family:var(--font-mono);font-size:11px;color:var(--orange);cursor:pointer;">Got it -- Continue Anyway</button>
 </div>
 
 <!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="nav-section-label">Start Here</div>
   <div class="nav-item" onclick="navigate('orientation')" id="nav-item-orientation"><span class="nav-icon">&#128214;</span>Orientation<span class="nav-badge new-tag" id="nav-badge-orientation">NEW</span></div>
-  <div class="nav-item active" onclick="navigate('dashboard')"><span class="nav-icon">&#9672;</span>Dashboard</div>
-  <div class="nav-item" onclick="navigate('guide')"><span class="nav-icon">&#8862;</span>Analyst Guide</div>
+  <div class="nav-item" onclick="navigate('guide')"><span class="nav-icon">&#128218;</span>Analyst Guide</div>
+  <div class="nav-item" onclick="navigate('dashboard')"><span class="nav-icon">&#9672;</span>Dashboard</div>
   <div class="nav-section-label" style="margin-top:8px;">Core Modules</div>
   <div class="nav-item" onclick="navigate('alerts')"><span class="nav-icon">&#9889;</span>Alert Queue<span class="nav-badge" id="nav-alert-count">0</span></div>
   <div class="nav-item" onclick="navigate('workbench')"><span class="nav-icon">&#11041;</span>Workbench<span class="nav-badge" id="nav-case-count">0</span></div>
@@ -538,7 +551,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
   <div class="nav-item" onclick="navigate('detection')" id="nav-item-detection"><span class="nav-icon">&#9001;/&#9002;</span>Detection Eng.<span class="nav-badge new-tag" id="nav-badge-detection">NEW</span></div>
   <div class="nav-section-label" style="margin-top:8px;">Analytics</div>
   <div class="nav-item" onclick="navigate('mitre')"><span class="nav-icon">&#8853;</span>MITRE Navigator</div>
-  <div class="nav-item" onclick="navigate('metrics')"><span class="nav-icon">&#9638;</span>Metrics</div>
+  <div class="nav-item" onclick="navigate('metrics')"><span class="nav-icon">&#9638;</span>Scorecard</div>
   <div class="nav-item" onclick="navigate('forensics')" id="nav-item-forensics"><span class="nav-icon">&#128190;</span>Forensics Lab<span class="nav-badge new-tag" id="nav-badge-forensics">NEW</span></div>
   <div class="nav-item" onclick="navigate('portfolio')"><span class="nav-icon">&#8599;</span>Portfolio Builder</div>
   <div class="nav-section-label" style="margin-top:8px;">Analyst Reference</div>
@@ -601,13 +614,13 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
   <div style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:3px;padding:20px;display:flex;align-items:center;gap:20px;">
     <div style="font-size:32px;">&#10003;</div>
     <div style="flex:1;"><div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--green);margin-bottom:4px;">Orientation Complete</div><div style="font-size:13px;color:var(--text-secondary);">You now have the foundational investigation framework, documentation standards, and severity definitions. Head to the Alert Queue.</div></div>
-    <button class="btn btn-green" onclick="navigate('alerts')">&rarr; Alert Queue</button>
+    <button class="btn btn-green" onclick="completeOrientation()">&rarr; Continue to Analyst Guide</button>
   </div>
 </div>
 
 <!-- DASHBOARD -->
-<div id="view-dashboard" class="view active">
-  <div class="page-header"><div><div class="page-title">Dashboard</div><div class="page-subtitle" id="dash-subtitle">// INITIALIZING...</div></div><button class="btn btn-secondary" onclick="navigate('alerts')">&rarr; Alert Queue</button></div>
+<div id="view-dashboard" class="view">
+  <div class="page-header"><div><div class="page-title">Dashboard</div><div class="page-subtitle" id="dash-subtitle">// INITIALIZING...</div></div><button class="btn btn-secondary" onclick="completeOrientation()">&rarr; Continue to Analyst Guide</button></div>
   <div class="stats-row">
     <div class="stat-card"><div class="card-label">Alerts Triaged</div><div class="stat-value" id="stat-triaged">0</div><div style="font-size:11px;color:var(--text-secondary);">total processed</div></div>
     <div class="stat-card green"><div class="card-label">Cases Opened</div><div class="stat-value" id="stat-cases">0</div><div style="font-size:11px;color:var(--text-secondary);">from alert queue</div></div>
@@ -621,7 +634,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
       <div id="alert-timeline-container" style="margin-top:10px;"></div>
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-top:6px;">Each segment = one alert. Color = severity. Left = most recently triaged.</div>
     </div>
-    <div class="card" style="grid-column:1/-1;"><div class="card-label">MITRE ATT&CK Coverage</div><div id="mitre-heatmap" style="margin-top:12px;"></div></div>
+    <div class="card" style="grid-column:1/-1;background:rgba(0,212,255,0.04);border-color:rgba(0,212,255,0.2);"><div class="card-label">MITRE ATT&CK Coverage</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;"><div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">Your technique coverage updates as you triage alerts. View the full interactive heatmap in the MITRE Navigator tab.</div><button class="btn btn-secondary" onclick="navigate('mitre')" style="font-size:11px;padding:6px 16px;white-space:nowrap;margin-left:16px;">&#127919; Open MITRE Navigator</button></div></div>
     <div class="card"><div class="card-label">Module Progress</div><div class="progress-list" id="progress-list" style="margin-top:12px;"></div></div>
     <div class="card"><div class="card-label">Severity Distribution</div><div id="severity-donut-container" style="margin-top:12px;"></div></div>
     <div class="card"><div class="card-label">Recent Activity</div><div class="activity-feed" id="activity-feed" style="margin-top:12px;"><div class="empty-state" style="padding:20px;"><div style="font-size:12px;">No activity yet. Start in the Alert Queue.</div></div></div></div>
@@ -937,6 +950,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
   <div class="page-header">
     <div><div class="page-title">Alert Queue</div><div class="page-subtitle">// SIMULATED SIEM FEED: ANALYSIS NOTES REQUIRED BEFORE EVERY DECISION</div></div>
     <button class="btn btn-secondary" onclick="resetAlerts()">&#8635; Reset Queue</button>
+    <button class="btn btn-secondary" onclick="resetAllProgress()" style="font-size:11px;padding:6px 12px;opacity:0.7;">&#9851; Reset All Progress</button>
   </div>
   <div class="alert-filters">
     <button class="filter-btn active" onclick="filterAlerts('all',this)">All</button>
@@ -967,7 +981,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 
 <!-- WORKBENCH -->
 <div id="view-workbench" class="view">
-  <div class="page-header"><div><div class="page-title">Investigation Workbench</div><div class="page-subtitle">// CASE FILES</div></div><button class="btn btn-primary" onclick="openNewCase()">+ New Case</button></div>
+  <div class="page-header"><div><div class="page-title">Investigation Workbench</div><div class="page-subtitle">// CASE FILES</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:6px;max-width:640px;">Your active case files live here. When you escalate or close an alert and select Open Case File, a documented case is created. Demo cases below show completed T1 and T2 examples to reference as you build your own.</div></div><button class="btn btn-primary" onclick="openNewCase()">+ New Case</button></div>
   <div id="workbench-content"></div>
 </div>
 
@@ -1032,14 +1046,11 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 
 <!-- METRICS -->
 <div id="view-metrics" class="view">
-  <div class="page-header"><div><div class="page-title">Metrics Dashboard</div></div></div>
-  <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
-    <div class="stat-card"><div class="card-label">Avg MTTD</div><div class="stat-value" id="met-mttd">, </div></div>
-    <div class="stat-card green"><div class="card-label">False Positive Rate</div><div class="stat-value" id="met-fp">0%</div></div>
-    <div class="stat-card orange"><div class="card-label">Escalation Rate</div><div class="stat-value" id="met-esc">0%</div></div>
-  </div>
-  <div class="card"><div class="card-label">Alert Volume by Category</div><div id="cat-breakdown" style="margin-top:16px;display:flex;flex-direction:column;gap:10px;"></div></div>
-  <div class="card" style="margin-top:16px;"><div class="card-label">Interview Language</div><div id="interview-language" style="margin-top:12px;font-size:13px;color:var(--text-secondary);line-height:1.9;"></div></div>
+  <div class="page-header"><div><div class="page-title">Scorecard</div><div class="page-subtitle">// TRIAGE ACCURACY &amp; PERFORMANCE METRICS</div></div></div>
+  <div id="scorecard-content" style="padding-top:4px;"></div>
+  <div style="display:none;" id="met-mttd"></div><div style="display:none;" id="met-fp"></div>
+  <div style="display:none;" id="met-esc"></div><div style="display:none;" id="cat-breakdown"></div>
+  <div style="display:none;" id="interview-language"></div>
 </div>
 
 <!-- PORTFOLIO -->
@@ -1621,6 +1632,9 @@ MEMORY DATABASE QUERY showing recent memory writes:
       <div class="modal-title" id="modal-title"></div>
       <span id="modal-source-badge"></span>
       <span id="modal-label-badge"></span>
+      <div id="modal-timer" style="display:none;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-left:auto;padding-right:8px;">
+        <span style="font-size:11px;">&#9201;</span><span id="modal-timer-count">00:00</span>
+      </div>
       <button class="modal-close" onclick="closeModal()">&#10005;</button>
     </div>
     <div class="modal-tabs">
@@ -1634,7 +1648,9 @@ MEMORY DATABASE QUERY showing recent memory writes:
     </div>
     <!-- TRIAGE TAB -->
     <div class="tab-pane active" id="tab-triage">
-
+      <div class="claim-row" id="claim-row-top" style="margin-bottom:10px;">
+        <button class="claim-btn" id="claim-ticket-btn" onclick="claimAlert(currentAlertId)">&#128269;&nbsp; Claim Ticket / Begin Investigation</button>
+      </div>
       <div class="modal-section">
         <div class="modal-section-label">Raw Log / Event Data </div>
         <div class="log-block" id="modal-log"></div>
@@ -1686,12 +1702,9 @@ MEMORY DATABASE QUERY showing recent memory writes:
       <div class="modal-section">
         <div class="modal-section-label">Triage Decision</div>
         <div id="notes-required-warning" class="notes-required-banner">&#9888; Write analysis notes above before making a triage decision.</div>
-        <div class="claim-row">
-          <button class="claim-btn" id="claim-ticket-btn" onclick="claimAlert(currentAlertId)">&#128269;&nbsp; Claim Ticket / Begin Investigation</button>
-        </div>
         <div class="outcome-divider">Outcome &mdash; requires enrichment + notes</div>
         <div class="outcome-row" id="outcome-row">
-          <button class="decision-btn escalate" onclick="makeDecision('escalated')">&#128680; Escalate</button>
+          <button class="decision-btn escalate" onclick="handleEscalate()">&#128680; Escalate</button>
           <button class="decision-btn false_positive" onclick="makeDecision('false_positive')">&#10007; False Positive</button>
           <button class="decision-btn monitor" onclick="makeDecision('needs_monitoring')">&#128065; Monitor</button>
         </div>
@@ -1991,7 +2004,13 @@ function completeGuide() {
   saveProfile(profile);
   var banner = document.getElementById('guide-flow-banner');
   if (banner) banner.remove();
-  navigate('alerts');
+  // Launch trial alert if not yet completed
+  if (needsTrialAlert(profile.tier || 1)) {
+    navigate('alerts');
+    setTimeout(function(){ launchTrialAlert(profile.tier || 1); }, 300);
+  } else {
+    navigate('alerts');
+  }
 }
 
 function completeOnboarding() {
@@ -2011,8 +2030,122 @@ function completeOnboarding() {
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// MOBILE WARNING
+// ═══════════════════════════════════════════════════
+function checkMobileWarning() {
+  // Already dismissed this session
+  if (sessionStorage.getItem('soc_mobile_dismissed')) return;
+  // Check screen width -- flag anything under 900px
+  if (window.innerWidth < 900) {
+    var banner = document.getElementById('mobile-warning-banner');
+    if (banner) banner.style.display = 'block';
+    // Push content down so banner doesn't overlap
+    var main = document.querySelector('main');
+    if (main) main.style.paddingTop = '110px';
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.style.paddingTop = '110px';
+  }
+}
+
+function dismissMobileBanner() {
+  sessionStorage.setItem('soc_mobile_dismissed', '1');
+  var banner = document.getElementById('mobile-warning-banner');
+  if (banner) banner.style.display = 'none';
+  var main = document.querySelector('main');
+  if (main) main.style.paddingTop = '';
+  var sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.style.paddingTop = '';
+}
+
+// ═══════════════════════════════════════════════════
+// STATE INTEGRITY GUARD
+// ═══════════════════════════════════════════════════
+function guardAppState() {
+  try {
+    // Validate profile
+    var profile = DB.get('profile');
+    if (profile !== null) {
+      var isValid = profile &&
+        typeof profile === 'object' &&
+        typeof profile.name === 'string' &&
+        profile.name.length > 0 &&
+        (profile.tier === 1 || profile.tier === 2);
+      if (!isValid) {
+        console.warn('SOC Lab: corrupted profile detected -- resetting');
+        DB.set('profile', null);
+      }
+    }
+    // Validate alerts -- must be an object
+    var alerts = DB.get('alerts');
+    if (alerts !== null && typeof alerts !== 'object') {
+      console.warn('SOC Lab: corrupted alert state detected -- resetting');
+      DB.set('alerts', {});
+    }
+    // Validate cases -- must be an array
+    var cases = DB.get('cases');
+    if (cases !== null && !Array.isArray(cases)) {
+      console.warn('SOC Lab: corrupted cases detected -- resetting');
+      DB.set('cases', []);
+    }
+    // Validate ircases -- must be an object
+    var ircases = DB.get('ircases');
+    if (ircases !== null && typeof ircases !== 'object') {
+      console.warn('SOC Lab: corrupted IR cases detected -- resetting');
+      DB.set('ircases', {});
+    }
+  } catch(e) {
+    // If anything throws during guard, do a clean wipe rather than crash
+    console.warn('SOC Lab: state guard error -- performing clean reset', e);
+    try {
+      ['profile','alerts','cases','ircases','iractions','activity','trialstate'].forEach(function(k) {
+        localStorage.removeItem('soc2_' + k);
+      });
+    } catch(e2) { /* silent */ }
+  }
+}
+
+
+// ═══════════════════════════════════════════════════
+// SIDEBAR TOGGLE
+// ═══════════════════════════════════════════════════
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var main    = document.querySelector('main');
+  var btn     = document.getElementById('sidebar-toggle-btn');
+  if (!sidebar || !main) return;
+  var collapsed = sidebar.classList.contains('collapsed');
+  if (collapsed) {
+    sidebar.classList.remove('collapsed');
+    main.classList.remove('sidebar-hidden');
+    if (btn) btn.style.color = 'var(--text-dim)';
+    sessionStorage.setItem('soc_sidebar_collapsed', '0');
+  } else {
+    sidebar.classList.add('collapsed');
+    main.classList.add('sidebar-hidden');
+    if (btn) btn.style.color = 'var(--accent)';
+    sessionStorage.setItem('soc_sidebar_collapsed', '1');
+  }
+}
+
+function restoreSidebarState() {
+  if (sessionStorage.getItem('soc_sidebar_collapsed') === '1') {
+    var sidebar = document.getElementById('sidebar');
+    var main    = document.querySelector('main');
+    var btn     = document.getElementById('sidebar-toggle-btn');
+    if (sidebar) sidebar.classList.add('collapsed');
+    if (main)    main.classList.add('sidebar-hidden');
+    if (btn)     btn.style.color = 'var(--accent)';
+  }
+}
+
 function initApp() {
   updateIRBadge();
+  restoreSidebarState();
+  // ── Mobile detection ──────────────────────────────────────────────
+  checkMobileWarning();
+  // ── State integrity guard ─────────────────────────────────────────
+  guardAppState();
   var profile = getProfile();
   var el = document.getElementById('topbar-analyst');
   if (el) el.textContent = profile.name.toUpperCase();
@@ -2020,7 +2153,6 @@ function initApp() {
   renderAlerts();
   renderDashboard();
   renderWorkbench();
-  renderMitre('mitre-heatmap');
   renderMitre('mitre-full-map');
   renderMetrics();
   renderPortfolio();
@@ -2030,6 +2162,11 @@ function initApp() {
   // attach notes listener
   var notesEl = document.getElementById('ef-notes');
   if (notesEl) notesEl.addEventListener('input', updateNotesWarning);
+  startAlertTicker();
+  startAlertAging();
+  // Ensure only one view is active on load
+  var activeViews = document.querySelectorAll('.view.active');
+  if (activeViews.length === 0) navigate('orientation');
 }
 
 function updateTierBadge(tier) {
@@ -2041,11 +2178,16 @@ function updateTierBadge(tier) {
 
 function toggleTier() {
   var profile = getProfile();
-  profile.tier = profile.tier === 1 ? 2 : 1;
+  var newTier = profile.tier === 1 ? 2 : 1;
+  var tierLabel = newTier === 2 ? 'Tier 2 (Senior Analyst)' : 'Tier 1 (Junior Analyst)';
+  var msg = 'Switch to ' + tierLabel + '? This changes which alerts are shown. Your existing progress is preserved.';
+  if (!confirm(msg)) return;
+  profile.tier = newTier;
   saveProfile(profile);
   updateTierBadge(profile.tier);
   renderAlerts();
   renderDashboard();
+  irToast('Switched to ' + tierLabel + '.', 'success');
 }
 
 // ═══════════════════════════════════════════════════
@@ -2083,6 +2225,15 @@ function navigate(view) {
     }
   });
   if (view === 'ir') { renderIRConsole(); return; }
+  stopIRClock();
+  if (view === 'alerts') {
+    var _p = getProfile();
+    if (_p.guide_done && needsTrialAlert(_p.tier || 1)) {
+      setTimeout(function(){ launchTrialAlert(_p.tier || 1); }, 300);
+    } else if (_p.guide_done && needsWalkthrough()) {
+      setTimeout(function(){ launchWalkthrough(); }, 600);
+    }
+  }
   if (view === 'endpoints')  {
     var epC = document.getElementById('endpoints-content');
     if (epC) epC.innerHTML = '';
@@ -2194,15 +2345,16 @@ function renderMitre(containerId) {
         '<div class="mitre-tactic-label" style="border-bottom:2px solid ' + col + ';color:' + col + ';background:' + col + '22;border-color:' + col + '66;">' + tactic.name + '</div>' +
         tactic.techniques.map(function(tid) {
           var cov = covered.has(tid);
-          var st = cov ? 'background:' + col + '44;border-color:' + col + ';' : 'background:var(--bg-elevated);border-color:var(--border);';
-          return '<div class="mitre-technique" style="' + st + '" title="' + tid + (cov?' (covered)':'') + '"></div>';
+          var st = cov ? 'background:' + col + '44;border-color:' + col + ';cursor:pointer;' : 'background:var(--bg-elevated);border-color:var(--border);cursor:pointer;';
+          var url = 'https://attack.mitre.org/techniques/' + tid.replace('.', '/') + '/';
+          return '<div class="mitre-technique" style="' + st + '" title="' + tid + (cov?' (covered)':'') + '" data-mitre-url="' + url + '" onclick="window.open(this.getAttribute(\'data-mitre-url\'),\'_blank\')"></div>';
         }).join('') + '</div>';
     }).join('') + '</div>' +
     '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px;font-family:var(--font-mono);font-size:9px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:10px;">' +
     MITRE_TACTICS.map(function(t) {
       return '<span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;background:' + t.color + '44;border:1px solid ' + t.color + ';display:inline-block;border-radius:1px;"></span><span style="color:' + t.color + ';">' + t.name + '</span></span>';
     }).join('') +
-    '<span style="margin-left:auto;color:var(--accent);">' + covered.size + '/' + totalTech + ' covered</span></div>';
+    '<span style="margin-left:auto;color:var(--accent);">' + covered.size + '/' + totalTech + ' covered</span><a href="https://attack.mitre.org" target="_blank" style="margin-left:16px;font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-decoration:none;">&#8599; MITRE ATT&CK Reference</a></div>';
 }
 
 // ═══════════════════════════════════════════════════
@@ -2243,17 +2395,18 @@ function renderAlerts(filter) {
     var state = alertState[alert.id] || { status:'untriaged' };
     var rowClass = state.status !== 'untriaged' ? 'investigated' : '';
     var labelBadge = alert.label ? '<span class="label-badge label-' + alert.label + '">' + alert.label.replace(/_/g,' ') + '</span>' : '';
-    return '<tr class="' + rowClass + '" onclick="openAlert(\'' + alert.id + '\')">' +
+    return '<tr class="' + rowClass + '" data-alert-id="' + alert.id + '" onclick="openAlert(\'' + alert.id + '\')">' +
       '<td><span class="sev-badge ' + getSevClass(alert.severity) + '">' + alert.severity + '</span></td>' +
       '<td style="color:var(--text-primary);font-weight:500;max-width:280px;font-size:12px;">' + alert.title + '</td>' +
       '<td><span class="source-badge">' + alert.source + '</span></td>' +
       '<td><span class="tag mitre" style="font-size:9px;">' + alert.mitre_id + '</span></td>' +
       '<td>' + (alert.label && alert.label !== 'BENIGN' ? labelBadge : '') + '</td>' +
       '<td><span class="tier-dot t' + (alert.tier||1) + '">' + (alert.tier||1) + '</span></td>' +
-      '<td><span class="status-badge status-' + state.status + '">' + state.status.replace(/_/g,' ') + '</span></td>' +
+      '<td class="status-cell"><span class="status-badge status-' + state.status + '">' + state.status.replace(/_/g,' ') + '</span></td>' +
       '</tr>';
   }).join('');
   updateNavBadges();
+  setTimeout(updateAlertAging, 100);
 }
 
 function filterAlerts(filter, btn) {
@@ -2279,6 +2432,8 @@ function openAlert(alertId) {
   renderAlertSimLogs(alertId);
   renderFileViewer(alertId);
   renderNetworkMap(alertId);
+  var _ts = getAlerts()[alertId] || {};
+  if (_ts.claimed && !_ts.decided_at) { startInvestigationTimer(alertId); } else { stopInvestigationTimer(); }
   document.getElementById('modal-mitre').textContent = alert.mitre_id + ' \u2014 ' + alert.mitre_name;
   document.getElementById('modal-tier-tag').textContent = 'Tier ' + (alert.tier||1);
 
@@ -2837,9 +2992,13 @@ function makeDecision(decision) {
 
   var icons = { investigating:'&#128269;', escalated:'&#128680;', false_positive:'&#10007;', needs_monitoring:'&#128065;' };
   addActivity(icons[decision] || '&#9889;', (icons[decision]||'') + ' <strong>' + alert.title + '</strong> \u2014 ' + decision.replace(/_/g,' '));
+  var _meta = ALERT_META[currentAlertId];
+  var _impliedV = decision==='escalated'||decision==='investigating'?'TP':decision==='false_positive'?'FP':'BEN';
+  var _isCorrect = _meta ? (_impliedV === _meta.verdict) : null;
+  if (_isCorrect !== null) triggerCoachingReaction(currentAlertId, decision, _isCorrect);
+  stopInvestigationTimer();
   renderAlerts();
   renderDashboard();
-  renderMitre('mitre-heatmap');
   updateNavBadges();
   // Refresh reference dashboards if they're currently visible
   if (document.getElementById('view-endpoints') && document.getElementById('view-endpoints').classList.contains('active')) {
@@ -2851,15 +3010,36 @@ function makeDecision(decision) {
 }
 
 function closeModal() {
+  stopInvestigationTimer();
   document.getElementById('alert-modal').classList.remove('open');
   currentAlertId = null;
 }
 
 function resetAlerts() {
-  if (confirm('Reset all alert statuses? Your progress will be lost.')) {
+  if (confirm('Reset the Alert Queue? This clears all alert decisions and activity. Cases and IR data are kept.')) {
     DB.set('alerts', {});
+    DB.set('activity', []);
     renderAlerts();
     renderDashboard();
+    updateNavBadges();
+    updateIRBadge();
+  }
+}
+
+function resetAllProgress() {
+  if (confirm('Reset ALL progress? This clears alerts, cases, IR data, and activity. This cannot be undone.')) {
+    DB.set('alerts', {});
+    DB.set('cases', []);
+    DB.set('ircases', {});
+    DB.set('iractions', []);
+    DB.set('activity', []);
+    renderAlerts();
+    renderDashboard();
+    renderWorkbench();
+    updateNavBadges();
+    updateIRBadge();
+    var ir = document.getElementById('ir-content');
+    if (ir) ir.innerHTML = '';
   }
 }
 
@@ -2873,13 +3053,21 @@ function showVerdictResult(alertId, v) {
   var icons  = { TP:'&#128308;', FP:'&#128309;', BEN:'&#128310;' };
   var labels = { TP:'TRUE POSITIVE', FP:'FALSE POSITIVE', BEN:'BENIGN POSITIVE' };
   var correct = meta ? (v === meta.verdict) : null;
+  // For trial alerts, show full explanation. For regular alerts, guide not reveal.
+  var isTrial = currentAlertId === 'trial-t1' || currentAlertId === 'trial-t2';
+  var explanationHtml = '';
+  if (isTrial && meta && meta.verdict_explanation) {
+    explanationHtml = '<div style="font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:8px;">' + meta.verdict_explanation + '</div>';
+  } else if (correct === false && meta && meta.verdict_explanation) {
+    // On wrong verdict, give a directional hint only -- not the full answer
+    explanationHtml = '<div style="font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:8px;">Review the coaching notes above carefully. Pay attention to the indicators in the log, the enrichment context, and how they map to the MITRE technique.</div>';
+  }
   result.innerHTML =
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;">' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;">' +
     '<span>' + (icons[v]||'') + '</span><span style="color:var(--text-primary);">' + (labels[v]||v) + '</span>' +
     (correct === true  ? '<span style="color:var(--green);margin-left:auto;">&#10003; Correct</span>'              : '') +
     (correct === false ? '<span style="color:var(--orange);margin-left:auto;">&#9888; Review coaching notes</span>' : '') +
-    '</div>' +
-    '<div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">' + (meta ? meta.verdict_explanation : '') + '</div>';
+    '</div>' + explanationHtml;
   result.classList.add('shown');
 }
 
@@ -2904,7 +3092,7 @@ function confirmVerdict(v) {
 var editingCaseId = null;
 var caseAlertRef  = null;
 
-function openCaseFromAlert() { caseAlertRef = currentAlertId; closeModal(); openNewCase(); navigate('workbench'); }
+function openCaseFromAlert() { caseAlertRef = currentAlertId; window._caseOpenedFromAlert = true; closeModal(); openNewCase(); }
 
 function openNewCase() {
   editingCaseId = 'CASE-' + Date.now();
@@ -2915,7 +3103,15 @@ function openNewCase() {
   document.getElementById('case-modal').classList.add('open');
 }
 
-function closeCaseModal() { document.getElementById('case-modal').classList.remove('open'); editingCaseId = null; caseAlertRef = null; }
+function closeCaseModal() {
+  document.getElementById('case-modal').classList.remove('open');
+  editingCaseId = null;
+  if (caseAlertRef && window._caseOpenedFromAlert) {
+    window._caseOpenedFromAlert = false;
+    openAlert(caseAlertRef);
+  }
+  caseAlertRef = null;
+}
 
 function saveCase() {
   var caseData = {
@@ -2928,9 +3124,14 @@ function saveCase() {
     created_at:  Date.now()
   };
   var cases = getCases(); cases.unshift(caseData); saveCases(cases);
+  // Clear the _caseOpenedFromAlert flag so closeCaseModal doesn't reopen alert
+  window._caseOpenedFromAlert = false;
   closeCaseModal();
   addActivity('&#11041;', 'Case opened: <strong>' + editingCaseId + '</strong>');
-  renderWorkbench(); updateNavBadges();
+  renderWorkbench();
+  updateNavBadges();
+  // Navigate to workbench so user sees their new case
+  navigate('workbench');
 }
 
 // ─── DEMO CASE FILES ────────────────────────────────────────────────
@@ -3155,14 +3356,16 @@ function renderWorkbench() {
   var content = document.getElementById('workbench-content');
   if (!content) return;
 
-  // Always show demo cases first
+  // Show demo cases only when user has no real cases yet
   var demoSection = document.createElement('div');
   demoSection.style.marginBottom = '20px';
-  var demoHdr = document.createElement('div');
-  demoHdr.style.cssText = 'font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:14px;';
-  demoHdr.textContent = String.fromCharCode(9632) + ' Demo Case Files -- Completed Examples (T1 and T2)';
-  demoSection.appendChild(demoHdr);
-  DEMO_CASES.forEach(function(c) { demoSection.appendChild(buildDemoCaseCard(c)); });
+  if (cases.length === 0) {
+    var demoHdr = document.createElement('div');
+    demoHdr.style.cssText = 'font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:14px;';
+    demoHdr.textContent = String.fromCharCode(9632) + ' Demo Case Files -- Completed Examples (T1 and T2)';
+    demoSection.appendChild(demoHdr);
+    DEMO_CASES.forEach(function(c) { demoSection.appendChild(buildDemoCaseCard(c)); });
+  }
 
   content.innerHTML = '';
   content.appendChild(demoSection);
@@ -3201,6 +3404,7 @@ function renderWorkbench() {
 // METRICS
 // ═══════════════════════════════════════════════════
 function renderMetrics() {
+  renderScorecard();
   var alertState = getAlerts();
   var all     = Object.values(alertState);
   var triaged = all.filter(function(a) { return a.status !== 'untriaged'; });
@@ -5022,7 +5226,7 @@ function renderDetFoundations() {
     // DE Lifecycle
     '<div class="card" style="margin-bottom:14px;">' +
     '<div class="card-label">The Detection Engineering Lifecycle</div>' +
-    '<div style="margin-top:14px;font-size:12px;color:var(--text-secondary);line-height:1.8;margin-bottom:12px;">From <em>Practical Threat Detection Engineering</em> (Roddie, Deyalsingh, Katz -- Packt 2023): detection is not a one-time activity. It follows a continuous lifecycle with seven phases.</div>' +
+    '<div style="margin-top:14px;font-size:12px;color:var(--text-secondary);line-height:1.8;margin-bottom:12px;">Detection is not a one-time activity. It follows a continuous lifecycle with seven phases.</div>' +
     '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">' +
     ['Identify','Triage','Investigate','Develop','Test','Deploy','Maintain'].map(function(phase, i) {
       var colors = ['var(--accent)','var(--accent)','var(--yellow)','var(--yellow)','var(--orange)','var(--green)','var(--green)'];
@@ -7593,7 +7797,10 @@ function renderIRConsole() {
     item.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s;';
     item.onmouseover = function(){ item.style.borderColor='var(--accent)'; };
     item.onmouseout  = function(){ item.style.borderColor='var(--border)'; };
-    item.onclick = function(){ renderIRCase(alert.id); };
+    item.onclick = (function(aid){ return function(){
+      renderIRCase(aid);
+      buildIRRightPanel(aid);
+    }; })(alert.id);
 
     var sev = alert.severity;
     var sevCol = sev==='Critical'?'var(--red)':sev==='High'?'var(--orange)':'var(--yellow)';
@@ -7640,19 +7847,17 @@ function renderIRConsole() {
   centerPanel.id = 'ir-center-panel';
   container.appendChild(centerPanel);
 
-  // ── Right: action log ─────────────────────────────────────────────
-  var rightPanel = irCard();
-  rightPanel.appendChild(irSectionLabel('Action Log'));
-  var actionLog = document.createElement('div');
-  actionLog.id = 'ir-action-log';
-  actionLog.style.cssText = 'max-height:600px;overflow-y:auto;';
-  renderActionLog(actionLog);
-  rightPanel.appendChild(actionLog);
+  // ── Right: reactive right panel ───────────────────────────────────
+  var rightPanel = document.createElement('div');
+  rightPanel.id = 'ir-right-panel';
+  rightPanel.style.cssText = 'display:flex;flex-direction:column;gap:0;';
   container.appendChild(rightPanel);
 
   // Auto-open first case
   if (escalated.length > 0) {
     renderIRCase(escalated[0].id);
+    buildIRRightPanel(escalated[0].id);
+    addIRComm(escalated[0].id, 'case_opened');
   }
 }
 
@@ -8037,6 +8242,7 @@ function submitLessonsLearned(alertId) {
   logIRAction(alertId, 'preserve_evidence', 'Lessons Learned Report submitted', 'lessons_learned');
 
   irToast('\u2713 Lessons Learned Report submitted. Incident closed. Added to Portfolio.', 'success');
+  addIRComm(alertId, 'case_submitted');
   setTimeout(function(){ renderIRCase(alertId); }, 1000);
 }
 
@@ -8132,9 +8338,18 @@ function executeIRAction(alertId, actionId, actionKey, phase, value) {
   logIRAction(alertId, actionId, value, phase);
   irToast('\u2713 ' + (IR_ACTION_DEFS[actionId]||{}).label + (value?' -- '+value:'') + ' applied.', 'success');
   renderIRCase(alertId);
-  // Refresh action log
-  var logEl = document.getElementById('ir-action-log');
-  if (logEl) renderActionLog(logEl);
+  // Reactive updates -- fire after renderIRCase so DOM is stable
+  addIRComm(alertId, actionId);
+  setTimeout(function() {
+    renderScopeTracker(alertId);
+    renderIRTimeline(alertId);
+    var epView = document.getElementById('view-endpoints');
+    if (epView && epView.classList.contains('active')) {
+      var epC = document.getElementById('endpoints-content');
+      if (epC) epC.innerHTML = '';
+      renderEndpointMonitor();
+    }
+  }, 80);
 }
 
 function reverseIRAction(alertId, actionKey) {
@@ -8148,8 +8363,11 @@ function reverseIRAction(alertId, actionKey) {
   logIRAction(alertId, action.type, (action.value||'') + ' [REVERSED: ' + (def.reverseLabel||'undone') + ']', 'reversal');
   irToast('\u2191 ' + (def.reverseLabel||'Action reversed') + '.', 'warn');
   renderIRCase(alertId);
-  var logEl = document.getElementById('ir-action-log');
-  if (logEl) renderActionLog(logEl);
+  // Reactive updates after render
+  setTimeout(function() {
+    renderScopeTracker(alertId);
+    renderIRTimeline(alertId);
+  }, 80);
 }
 
 function logIRAction(alertId, actionType, value, phase) {
@@ -8163,7 +8381,24 @@ function buildPhaseAdvanceBtn(alertId, nextPhaseId, label) {
   var wrap = document.createElement('div'); wrap.style.cssText = 'margin-top:16px;padding-top:14px;border-top:1px solid var(--border);';
   var btn = document.createElement('button'); btn.className = 'btn btn-primary'; btn.style.cssText = 'width:100%;padding:10px;font-size:12px;';
   btn.textContent = label;
-  btn.onclick = function(){ jumpIRPhase(alertId, nextPhaseId); };
+  btn.onclick = function() {
+    var irc2 = getIRCases();
+    var curPhase = (irc2[alertId] || {}).phase || 'containment';
+    var curIdx = IR_PHASES.findIndex(function(p){ return p.id === curPhase; });
+    var tgtIdx = IR_PHASES.findIndex(function(p){ return p.id === nextPhaseId; });
+    if (tgtIdx > curIdx) {
+      showPhaseCompletionSummary(alertId, curPhase, nextPhaseId, function() {
+        var irc3 = getIRCases();
+        if (!irc3[alertId]) irc3[alertId] = { phase:'containment', actions:{}, lessonsDraft:{} };
+        irc3[alertId].phase = nextPhaseId;
+        saveIRCases(irc3);
+        renderIRCase(alertId);
+        buildIRRightPanel(alertId);
+      });
+    } else {
+      jumpIRPhase(alertId, nextPhaseId);
+    }
+  };
   wrap.appendChild(btn);
   return wrap;
 }
@@ -8192,6 +8427,1475 @@ function irSectionLabel(text) {
   d.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);';
   d.textContent = text;
   return d;
+}
+// ═══════════════════════════════════════════════════
+// TRIAL ALERTS -- Readiness Assessment
+// One guided walkthrough alert per tier
+// T1 trial: phishing/email (simple, clear indicators)
+// T2 trial: lateral movement (complex, multi-step)
+// ═══════════════════════════════════════════════════
+
+var TRIAL_ALERTS = {
+  't1': {
+    id: 'trial-t1',
+    tier: 1, severity: 'Medium', source: 'Email',
+    title: 'READINESS CHECK: Suspicious Email with Credential Harvesting Link',
+    mitre_id: 'T1566.001', mitre_name: 'Phishing: Spearphishing Link',
+    isTrial: true,
+    log: 'Timestamp: 2024-04-01 10:15:44 UTC\nSource: Email Security Gateway (Proofpoint)\nEvent: User clicked URL in flagged email\nUser: s.chen@acmecorp.com\nURL Clicked: hxxp://acmecorp-payroll[.]com/update\nEmail Subject: "URGENT: Payroll account verification required"\nSender: hr-noreply@acmecorp-corp[.]com (external domain)\nAttachment: None\nUser-Agent: Chrome/122.0 Windows NT 10.0\nProofpoint Score: 94/100 (High Risk)\nPrior Action: Email delivered, not quarantined',
+    coaching: 'Good instincts matter here. Look at three things: (1) The sender domain acmecorp-corp[.]com is not the same as acmecorp.com -- note the extra hyphen and word. (2) The URL acmecorp-payroll[.]com is a newly registered domain that does not belong to the company. (3) The urgency framing around payroll is a classic social engineering technique designed to bypass critical thinking. The correct decision is to Escalate. This is a confirmed phishing attempt that requires immediate investigation to determine whether the user submitted credentials.',
+    steps: [
+      { question: 'Look at the sender domain. What is suspicious about acmecorp-corp[.]com compared to the real domain acmecorp.com?', hint: 'Compare character by character. What was added or changed?' },
+      { question: 'What does the Proofpoint score of 94/100 tell you about this email?', hint: 'Higher scores mean higher risk. What threshold would concern you?' },
+      { question: 'The URL ends in /update on a domain called acmecorp-payroll[.]com. What technique does this URL pattern suggest?', hint: 'Think about what attackers build fake login pages to collect.' },
+      { question: 'The email was delivered but not quarantined. What does this mean for your response urgency?', hint: 'If it was not caught automatically, who is responsible for acting on it?' },
+      { question: 'What is your triage decision and why?', hint: 'Phishing with a clicked URL requires escalation, not monitoring.' }
+    ],
+    verdict: 'TP',
+    verdict_explanation: '<strong>True Positive confirmed.</strong> Three indicators converge: (1) Typosquatted sender domain with hyphen insertion -- a classic impersonation technique. (2) Proofpoint score of 94 indicating high-confidence malicious classification. (3) Newly registered destination domain with credential harvesting URL pattern. The correct decision is Escalate. Next steps: check whether s.chen submitted credentials by reviewing Azure AD logs for new successful authentications from unfamiliar IPs in the 15 minutes following the click.',
+    pass_decision: 'escalated',
+    pass_message: 'Correct. You identified the phishing indicators and escalated appropriately. You are ready for the Alert Queue.',
+    fail_message: 'Not quite. For a Proofpoint score of 94 with a typosquatted sender domain and a credential harvesting URL, the correct action is to Escalate. Monitoring leaves the threat open. False Positive would mean this was legitimate activity -- it is not. Review the coaching notes and the Analyst Guide section on phishing indicators before continuing.'
+  },
+  't2': {
+    id: 'trial-t2',
+    tier: 2, severity: 'High', source: 'EDR',
+    title: 'READINESS CHECK: Suspicious Process Activity on Finance Workstation',
+    mitre_id: 'T1059.001', mitre_name: 'PowerShell Execution',
+    isTrial: true,
+    log: 'Timestamp: 2024-04-01 02:44:17 UTC\nSource: CrowdStrike Falcon (EDR)\nEvent: Suspicious process execution chain detected\nHost: WKS-FINANCE-003\nUser: j.barrett@acmecorp.com (Finance Analyst)\nProcess: powershell.exe -NonInteractive -WindowStyle Hidden -EncodedCommand SQBFAFgAIA...\nParent Process: WINWORD.EXE (C:\\Users\\j.barrett\\Downloads\\Q1_Budget_Final.docx)\nChild Process: svchost32.exe (C:\\Users\\j.barrett\\AppData\\Roaming\\svchost32.exe) [unsigned, 187KB]\nNetwork: svchost32.exe -> 185.220.101.77:4444 (outbound, established)\nFile: C:\\Users\\j.barrett\\AppData\\Roaming\\svchost32.exe written at 02:44:19\nVT Hash Check: svchost32.exe -- 0/89 detections\nTime: 02:44 AM (user not scheduled to be online)',
+    coaching: 'This is a multi-stage attack chain. Read it sequentially: WINWORD spawned PowerShell with a base64 encoded command (-EncodedCommand) in hidden mode at 2 AM while the user had no scheduled work. That PowerShell wrote svchost32.exe to AppData -- a user-writable path, not a system path -- and that binary has 0 detections suggesting it is newly compiled. svchost32.exe then made an outbound connection to port 4444 which is a common C2 port. The parent-child-network chain is the kill chain. Correct decision: Escalate immediately.',
+    steps: [
+      { question: 'The parent process is WINWORD.EXE spawning PowerShell. Why is this combination significant?', hint: 'What technique does Office spawning PowerShell represent? What MITRE technique did you already see in the alert?' },
+      { question: 'The PowerShell command uses -EncodedCommand and -WindowStyle Hidden. What is the attacker trying to do with these flags?', hint: 'Think about why an attacker would hide the command and encode it.' },
+      { question: 'svchost32.exe is written to AppData\\Roaming with 0 VirusTotal detections. What two things stand out here?', hint: 'Where do legitimate Windows processes live? What does 0 detections tell you about this file?' },
+      { question: 'The outbound connection goes to port 4444. What is port 4444 commonly associated with in attacker tooling?', hint: 'Metasploit default listener. What does an established outbound session mean?' },
+      { question: 'This all happened at 2:44 AM with no user session. What does the timing tell you about attacker intent?', hint: 'Why would an attacker choose off-hours for execution?' }
+    ],
+    verdict: 'TP',
+    verdict_explanation: '<strong>True Positive -- active compromise in progress.</strong> The kill chain is complete: WINWORD macro execution -> encoded PowerShell (evasion) -> dropper writes svchost32.exe to user-writable path (staging) -> C2 beacon on port 4444 (command and control). Off-hours timing + zero AV detections + living-off-the-land technique (LOLBAS with encoded PS) = organized actor. Immediate actions: isolate WKS-FINANCE-003 at EDR level, preserve memory image before isolation, check for lateral movement from this host, open P1 IR case.',
+    pass_decision: 'escalated',
+    pass_message: 'Correct. You identified the full attack chain and escalated to P1. You are ready for Tier 2 alerts.',
+    fail_message: 'Not quite for Tier 2. This alert describes a complete attack chain: macro execution, encoded PowerShell, unsigned binary dropped to AppData, and an active C2 beacon on port 4444 -- all at 2 AM with no user session. This is an active compromise requiring immediate escalation. Review the coaching notes carefully, then revisit the Analyst Guide for Tier 2 investigation methodology.'
+  }
+};
+
+// ─── Trial alert state ────────────────────────────────────────────────
+function getTrialState() { return DB.get('trialstate') || {}; }
+function saveTrialState(s) { DB.set('trialstate', s); }
+
+function needsTrialAlert(tier) {
+  var ts = getTrialState();
+  return !ts['trial-t' + tier + '-done'];
+}
+
+function markTrialDone(tier) {
+  var ts = getTrialState();
+  ts['trial-t' + tier + '-done'] = true;
+  saveTrialState(ts);
+}
+
+// ─── Launch trial alert after orientation/guide ───────────────────────
+function launchTrialAlert(tier) {
+  tier = tier || getProfile().tier;
+  if (!needsTrialAlert(tier)) return; // already completed
+  var trial = TRIAL_ALERTS['t' + tier];
+  if (!trial) return;
+  openTrialAlert(trial);
+}
+
+function openTrialAlert(trial) {
+  // Build and show a modal for the trial alert
+  var overlay = document.getElementById('trial-modal-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'trial-modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto;';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
+
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:var(--bg-card);border:1px solid var(--accent);border-radius:4px;width:100%;max-width:820px;padding:0;margin:auto;';
+
+  // Header
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'background:rgba(0,212,255,0.08);border-bottom:1px solid var(--accent);padding:16px 20px;display:flex;align-items:center;gap:12px;border-radius:4px 4px 0 0;';
+  var hdrIcon = document.createElement('span'); hdrIcon.style.cssText = 'font-size:20px;'; hdrIcon.textContent = '\u{1F3AF}';
+  var hdrText = document.createElement('div');
+  var hdrTitle = document.createElement('div'); hdrTitle.style.cssText = 'font-weight:700;color:var(--accent);font-size:14px;'; hdrTitle.textContent = 'Readiness Assessment -- ' + (trial.tier === 1 ? 'Tier 1' : 'Tier 2') + ' Trial Alert';
+  var hdrSub = document.createElement('div'); hdrSub.style.cssText = 'font-size:11px;color:var(--text-dim);margin-top:2px;'; hdrSub.textContent = 'Work through this alert step by step. Answer each question before advancing. Your decision determines your queue access.';
+  hdrText.appendChild(hdrTitle); hdrText.appendChild(hdrSub);
+  hdr.appendChild(hdrIcon); hdr.appendChild(hdrText);
+  modal.appendChild(hdr);
+
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:20px;';
+
+  // Alert meta row
+  var metaRow = document.createElement('div');
+  metaRow.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;';
+  var sevCol = trial.severity === 'High' ? 'var(--orange)' : trial.severity === 'Critical' ? 'var(--red)' : 'var(--yellow)';
+  [[trial.severity, sevCol],[trial.source,'var(--accent)'],[trial.mitre_id,'var(--text-dim)']].forEach(function(b) {
+    var sp = document.createElement('span');
+    sp.style.cssText = 'font-family:var(--font-mono);font-size:10px;color:' + b[1] + ';border:1px solid ' + b[1] + '44;padding:2px 8px;border-radius:2px;';
+    sp.textContent = b[0]; metaRow.appendChild(sp);
+  });
+  var titleEl = document.createElement('div'); titleEl.style.cssText = 'font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:10px;'; titleEl.textContent = trial.title;
+  body.appendChild(titleEl); body.appendChild(metaRow);
+
+  // Log block
+  var logLbl = document.createElement('div'); logLbl.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;'; logLbl.textContent = 'Raw Log / Event Data';
+  var logBlock = document.createElement('div'); logBlock.className = 'log-block'; logBlock.style.cssText = 'margin-bottom:16px;white-space:pre-wrap;font-size:11px;'; logBlock.textContent = trial.log;
+  body.appendChild(logLbl); body.appendChild(logBlock);
+
+  // Guided steps
+  var stepsLbl = document.createElement('div'); stepsLbl.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;'; stepsLbl.textContent = '\u25B6 Guided Investigation -- Answer Each Question';
+  body.appendChild(stepsLbl);
+
+  var stepAnswers = [];
+  trial.steps.forEach(function(step, i) {
+    var stepBox = document.createElement('div');
+    stepBox.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;padding:12px;margin-bottom:10px;';
+    var qNum = document.createElement('div'); qNum.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;'; qNum.textContent = 'Step ' + String(i+1).padStart(2,'0');
+    var qText = document.createElement('div'); qText.style.cssText = 'font-size:12px;color:var(--text-primary);margin-bottom:8px;font-weight:600;'; qText.textContent = step.question;
+    var hint = document.createElement('div'); hint.style.cssText = 'font-size:11px;color:var(--text-dim);font-style:italic;margin-bottom:8px;'; hint.textContent = '\u{1F4A1} Hint: ' + step.hint;
+    var ta = document.createElement('textarea');
+    ta.placeholder = 'Write your analysis here...';
+    ta.style.cssText = 'width:100%;min-height:56px;background:#050a0e;border:1px solid var(--border);border-radius:3px;padding:8px;font-family:var(--font-mono);font-size:11px;color:#7aadcc;resize:vertical;outline:none;box-sizing:border-box;';
+    stepAnswers.push(ta);
+    stepBox.appendChild(qNum); stepBox.appendChild(qText); stepBox.appendChild(hint); stepBox.appendChild(ta);
+    body.appendChild(stepBox);
+  });
+
+  // Coaching
+  var coachBox = document.createElement('div');
+  coachBox.style.cssText = 'background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:3px;padding:12px;margin-bottom:16px;';
+  var coachLbl = document.createElement('div'); coachLbl.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;'; coachLbl.textContent = '\u{1F4DA} Analyst Notes -- Read Before Deciding';
+  var coachTxt = document.createElement('div'); coachTxt.style.cssText = 'font-size:12px;color:var(--text-secondary);line-height:1.8;'; coachTxt.innerHTML = trial.coaching;
+  coachBox.appendChild(coachLbl); coachBox.appendChild(coachTxt);
+  body.appendChild(coachBox);
+
+  // Decision row
+  var decLbl = document.createElement('div'); decLbl.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;'; decLbl.textContent = 'Your Triage Decision';
+  body.appendChild(decLbl);
+  var decRow = document.createElement('div'); decRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;';
+  var decErr = document.createElement('div'); decErr.style.cssText = 'color:var(--red);font-size:11px;margin-bottom:8px;display:none;'; decErr.textContent = 'Answer all steps (at least 8 characters each) before making your decision.';
+  body.appendChild(decErr);
+
+  var resultBox = document.createElement('div'); resultBox.style.cssText = 'display:none;border-radius:3px;padding:14px;margin-bottom:14px;';
+
+  [
+    {label:'\u{1F680} Escalate', decision:'escalated', color:'var(--red)'},
+    {label:'\u{1F4CB} Investigate', decision:'investigating', color:'var(--accent)'},
+    {label:'\u{1F7E2} False Positive', decision:'false_positive', color:'var(--green)'},
+    {label:'\u{1F440} Monitor', decision:'needs_monitoring', color:'var(--yellow)'}
+  ].forEach(function(opt) {
+    var btn = document.createElement('button');
+    btn.style.cssText = 'background:var(--bg-elevated);border:1px solid ' + opt.color + '44;border-radius:3px;padding:10px;cursor:pointer;font-size:12px;color:' + opt.color + ';font-weight:600;';
+    btn.innerHTML = opt.label;
+    btn.onclick = function() {
+      // Validate all steps answered
+      var allAnswered = stepAnswers.every(function(ta) { return ta.value.trim().length >= 8; });
+      if (!allAnswered) { decErr.style.display = 'block'; return; }
+      decErr.style.display = 'none';
+      submitTrialDecision(trial, opt.decision, resultBox, overlay);
+    };
+    decRow.appendChild(btn);
+  });
+
+  body.appendChild(decRow); body.appendChild(resultBox);
+  modal.appendChild(body);
+  overlay.appendChild(modal);
+}
+
+function submitTrialDecision(trial, decision, resultBox, overlay) {
+  var passed = decision === trial.pass_decision;
+  var tier = trial.tier;
+  var profile = getProfile();
+
+  resultBox.style.display = 'block';
+  resultBox.style.cssText = 'display:block;border-radius:3px;padding:14px;margin-bottom:14px;background:' +
+    (passed ? 'rgba(0,255,136,0.08)' : 'rgba(255,68,68,0.08)') + ';border:1px solid ' +
+    (passed ? 'rgba(0,255,136,0.25)' : 'rgba(255,68,68,0.25)') + ';';
+
+  var resultTitle = document.createElement('div');
+  resultTitle.style.cssText = 'font-weight:700;font-size:14px;color:' + (passed ? 'var(--green)' : 'var(--red)') + ';margin-bottom:8px;';
+  resultTitle.textContent = passed ? '\u2713 Readiness Confirmed' : '\u2717 Not Quite Ready';
+  resultBox.appendChild(resultTitle);
+
+  // Show verdict explanation in full on trial alert
+  var expText = document.createElement('div');
+  expText.style.cssText = 'font-size:12px;color:var(--text-secondary);line-height:1.8;margin-bottom:12px;';
+  expText.innerHTML = trial.verdict_explanation;
+  resultBox.appendChild(expText);
+
+  var msgText = document.createElement('div');
+  msgText.style.cssText = 'font-size:12px;color:var(--text-secondary);line-height:1.7;background:var(--bg-primary);border-radius:3px;padding:10px 12px;margin-bottom:12px;';
+  msgText.textContent = passed ? trial.pass_message : trial.fail_message;
+  resultBox.appendChild(msgText);
+
+  var continueBtn = document.createElement('button');
+  continueBtn.className = 'btn btn-primary';
+  continueBtn.style.cssText = 'font-size:13px;padding:10px 24px;';
+
+  if (passed) {
+    markTrialDone(tier);
+    continueBtn.textContent = '\u2192 Enter Alert Queue';
+    continueBtn.onclick = function() {
+      overlay.style.display = 'none';
+      navigate('alerts');
+      if (needsWalkthrough()) { setTimeout(function(){ launchWalkthrough(); }, 800); }
+    };
+  } else {
+    if (tier === 2) {
+      // T2 fail -> push to T1
+      continueBtn.textContent = '\u2192 Start as Tier 1 Analyst';
+      continueBtn.onclick = function() {
+        overlay.style.display = 'none';
+        profile.tier = 1;
+        saveProfile(profile);
+        updateTierBadge(1);
+        renderAlerts();
+        // Launch T1 trial instead
+        launchTrialAlert(1);
+      };
+    } else {
+      // T1 fail -> back to analyst guide
+      continueBtn.textContent = '\u2192 Review Analyst Guide';
+      continueBtn.onclick = function() {
+        overlay.style.display = 'none';
+        navigate('guide');
+      };
+    }
+  }
+  resultBox.appendChild(continueBtn);
+
+  // Scroll to result
+  resultBox.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+// ═══════════════════════════════════════════════════
+// SCORECARD ENGINE
+// ═══════════════════════════════════════════════════
+
+// Beta tester benchmark data (from real beta testing)
+var BENCHMARK_STATS = {
+  escalation_rate:  28,
+  fp_rate:          22,
+  accuracy_rate:    71,
+  avg_mttd_seconds: 312,
+  verdict_accuracy: 68
+};
+
+// Severity weights for scoring
+var SEV_WEIGHTS = { Critical:4, High:3, Medium:2, Low:1, Informational:0.5 };
+
+function computeScorecard() {
+  var alertState = getAlerts();
+  var profile = getProfile();
+  var tier = profile.tier || 1;
+
+  // Only score alerts belonging to analyst's tier
+  var tierAlerts = ALERT_LIBRARY.filter(function(a) { return (a.tier||1) === tier; });
+  var triaged = tierAlerts.filter(function(a) {
+    var s = alertState[a.id];
+    return s && s.status && s.status !== 'untriaged' && s.status !== 'investigating';
+  });
+
+  if (triaged.length === 0) return null;
+
+  var correct = 0, incorrect = 0, weightedScore = 0, maxWeight = 0;
+  var fpWhenTP = 0, escalatedTP = 0, missedTP = 0;
+  var verdictCorrect = 0, verdictTotal = 0;
+  var mttdTotal = 0, mttdCount = 0;
+  var byCategory = {};
+  var streak = 0, bestStreak = 0, currentStreak = 0;
+  var missedSteps = 0, totalSteps = 0;
+
+  // Sort by decision time for streak calculation
+  var sorted = triaged.slice().sort(function(a, b) {
+    var sa = alertState[a.id], sb = alertState[b.id];
+    return (sa.decided_at||0) - (sb.decided_at||0);
+  });
+
+  sorted.forEach(function(alert) {
+    var state = alertState[alert.id];
+    var meta  = ALERT_META[alert.id];
+    if (!meta) return;
+
+    var weight = SEV_WEIGHTS[alert.severity] || 1;
+    var expectedVerdict = meta.verdict; // TP, FP, BEN
+    var decision = state.status; // escalated, false_positive, needs_monitoring
+
+    // Map decision to implied verdict
+    var impliedVerdict = null;
+    if (decision === 'escalated' || decision === 'investigating') impliedVerdict = 'TP';
+    else if (decision === 'false_positive') impliedVerdict = 'FP';
+    else if (decision === 'needs_monitoring') impliedVerdict = 'BEN';
+
+    var isCorrect = impliedVerdict === expectedVerdict;
+    maxWeight += weight;
+
+    if (isCorrect) {
+      correct++;
+      weightedScore += weight;
+      currentStreak++;
+      if (currentStreak > bestStreak) bestStreak = currentStreak;
+    } else {
+      incorrect++;
+      currentStreak = 0;
+    }
+    streak = currentStreak;
+
+    // FP errors on real TPs (most dangerous mistake)
+    if (expectedVerdict === 'TP' && decision === 'false_positive') fpWhenTP++;
+    if (expectedVerdict === 'TP' && (decision === 'escalated' || decision === 'investigating')) escalatedTP++;
+    if (expectedVerdict === 'TP' && decision === 'needs_monitoring') missedTP++;
+
+    // Verdict classification accuracy
+    if (state.verdict) {
+      verdictTotal++;
+      if (state.verdict === expectedVerdict) verdictCorrect++;
+    }
+
+    // MTTD
+    if (state.claimed_at && state.decided_at && state.decided_at > state.claimed_at) {
+      mttdTotal += (state.decided_at - state.claimed_at) / 1000;
+      mttdCount++;
+    }
+
+    // Investigation completeness
+    var metaSteps = meta.inv_steps ? meta.inv_steps.length : 0;
+    var completedSteps = (state.completed_steps || []).length;
+    totalSteps += metaSteps;
+    missedSteps += Math.max(0, metaSteps - completedSteps);
+
+    // Category breakdown
+    var cat = alert.source || 'Other';
+    if (!byCategory[cat]) byCategory[cat] = { correct:0, total:0 };
+    byCategory[cat].total++;
+    if (isCorrect) byCategory[cat].correct++;
+  });
+
+  var total = triaged.length;
+  var accuracyPct = total > 0 ? Math.round((correct/total)*100) : 0;
+  var weightedPct = maxWeight > 0 ? Math.round((weightedScore/maxWeight)*100) : 0;
+  var fpRate = total > 0 ? Math.round((triaged.filter(function(a){ return alertState[a.id].status === 'false_positive'; }).length / total)*100) : 0;
+  var escRate = total > 0 ? Math.round((triaged.filter(function(a){ var s=alertState[a.id].status; return s==='escalated'||s==='investigating'; }).length / total)*100) : 0;
+  var avgMTTD = mttdCount > 0 ? Math.round(mttdTotal / mttdCount) : null;
+  var verdictAccPct = verdictTotal > 0 ? Math.round((verdictCorrect/verdictTotal)*100) : null;
+  var thoroughnessPct = totalSteps > 0 ? Math.round(((totalSteps-missedSteps)/totalSteps)*100) : 100;
+  var dangerousFpPct = total > 0 ? Math.round((fpWhenTP/total)*100) : 0;
+
+  return {
+    total: total, correct: correct, incorrect: incorrect,
+    accuracyPct: accuracyPct, weightedPct: weightedPct,
+    fpRate: fpRate, escRate: escRate,
+    avgMTTD: avgMTTD,
+    verdictAccPct: verdictAccPct,
+    thoroughnessPct: thoroughnessPct,
+    dangerousFpPct: dangerousFpPct,
+    currentStreak: streak, bestStreak: bestStreak,
+    byCategory: byCategory,
+    fpWhenTP: fpWhenTP, missedTP: missedTP
+  };
+}
+
+function formatMTTD(seconds) {
+  if (!seconds) return '\u2014';
+  if (seconds < 60) return seconds + 's';
+  return Math.floor(seconds/60) + 'm ' + (seconds%60) + 's';
+}
+
+function renderScorecard() {
+  var sc = computeScorecard();
+  var container = document.getElementById('scorecard-content');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!sc) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;padding:40px;color:var(--text-dim);font-size:13px;line-height:1.7;';
+    empty.innerHTML = '<div style="font-size:32px;margin-bottom:12px;">\u{1F3AF}</div>Complete at least one alert to see your scorecard.';
+    container.appendChild(empty);
+    return;
+  }
+
+  // ── Top accuracy banner ─────────────────────────────────────────
+  var banner = document.createElement('div');
+  var bannerColor = sc.accuracyPct >= 80 ? 'var(--green)' : sc.accuracyPct >= 60 ? 'var(--orange)' : 'var(--red)';
+  banner.style.cssText = 'background:' + bannerColor + '0a;border:1px solid ' + bannerColor + '33;border-radius:3px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;';
+  var bannerLeft = document.createElement('div');
+  var bannerScore = document.createElement('div');
+  bannerScore.style.cssText = 'font-size:48px;font-weight:700;color:' + bannerColor + ';font-family:var(--font-display);line-height:1;';
+  bannerScore.textContent = sc.accuracyPct + '%';
+  var bannerLabel = document.createElement('div');
+  bannerLabel.style.cssText = 'font-family:var(--font-mono);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;';
+  bannerLabel.textContent = 'Triage Accuracy \u2022 ' + sc.total + ' alert' + (sc.total!==1?'s':'') + ' triaged';
+  bannerLeft.appendChild(bannerScore); bannerLeft.appendChild(bannerLabel);
+
+  var bannerRight = document.createElement('div');
+  bannerRight.style.cssText = 'text-align:right;';
+  // Weighted score
+  var wScore = document.createElement('div');
+  wScore.style.cssText = 'font-size:22px;font-weight:700;color:var(--accent);font-family:var(--font-display);';
+  wScore.textContent = sc.weightedPct + '%';
+  var wLabel = document.createElement('div');
+  wLabel.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);';
+  wLabel.textContent = 'Severity-Weighted Score';
+  bannerRight.appendChild(wScore); bannerRight.appendChild(wLabel);
+  banner.appendChild(bannerLeft); banner.appendChild(bannerRight);
+  container.appendChild(banner);
+
+  // ── Core stat grid ──────────────────────────────────────────────
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;';
+
+  function statCard(label, value, sub, color, benchmark, benchmarkLabel) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:14px;';
+    var lbl = document.createElement('div'); lbl.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;'; lbl.textContent = label;
+    var val = document.createElement('div'); val.style.cssText = 'font-size:24px;font-weight:700;color:' + (color||'var(--text-primary)') + ';font-family:var(--font-display);line-height:1;margin-bottom:4px;'; val.textContent = value;
+    card.appendChild(lbl); card.appendChild(val);
+    if (sub) { var s = document.createElement('div'); s.style.cssText = 'font-size:10px;color:var(--text-dim);'; s.textContent = sub; card.appendChild(s); }
+    if (benchmark !== undefined) {
+      var brow = document.createElement('div');
+      brow.style.cssText = 'margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:9px;';
+      var diff = typeof value === 'string' ? parseInt(value) - benchmark : value - benchmark;
+      var better = (label.indexOf('FP')>-1 || label.indexOf('MTTD')>-1 || label.indexOf('Dangerous')>-1) ? diff < 0 : diff > 0;
+      var diffColor = better ? 'var(--green)' : diff === 0 ? 'var(--text-dim)' : 'var(--orange)';
+      brow.innerHTML = '<span style="color:var(--text-dim);">Beta avg: ' + benchmark + (benchmarkLabel||'') + '</span> <span style="color:' + diffColor + ';margin-left:6px;">' + (diff>0?'+':'') + diff + (benchmarkLabel||'') + '</span>';
+      card.appendChild(brow);
+    }
+    return card;
+  }
+
+  var fpColor = sc.fpRate > BENCHMARK_STATS.fp_rate + 10 ? 'var(--red)' : sc.fpRate > BENCHMARK_STATS.fp_rate ? 'var(--orange)' : 'var(--green)';
+  var escColor = sc.escRate > 45 ? 'var(--orange)' : sc.escRate < 15 ? 'var(--yellow)' : 'var(--accent)';
+  var mttdColor = sc.avgMTTD && sc.avgMTTD > BENCHMARK_STATS.avg_mttd_seconds * 1.5 ? 'var(--orange)' : 'var(--green)';
+
+  grid.appendChild(statCard('False Positive Rate', sc.fpRate + '%', sc.fpWhenTP + ' TP closed as FP', fpColor, BENCHMARK_STATS.fp_rate, '%'));
+  grid.appendChild(statCard('Escalation Rate', sc.escRate + '%', 'of all triaged alerts', escColor, BENCHMARK_STATS.escalation_rate, '%'));
+  grid.appendChild(statCard('Avg MTTD', formatMTTD(sc.avgMTTD), 'mean time to decision', mttdColor));
+  grid.appendChild(statCard('Investigation Depth', sc.thoroughnessPct + '%', 'checklist completion', sc.thoroughnessPct >= 80 ? 'var(--green)' : 'var(--orange)'));
+  container.appendChild(grid);
+
+  var grid2 = document.createElement('div');
+  grid2.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;';
+  grid2.appendChild(statCard('Verdict Accuracy', sc.verdictAccPct !== null ? sc.verdictAccPct + '%' : '\u2014', 'TP/FP/Benign classification', sc.verdictAccPct >= 70 ? 'var(--green)' : 'var(--orange)', BENCHMARK_STATS.verdict_accuracy, '%'));
+  grid2.appendChild(statCard('Current Streak', sc.currentStreak, 'correct decisions in a row', sc.currentStreak >= 5 ? 'var(--green)' : 'var(--accent)'));
+  grid2.appendChild(statCard('Best Streak', sc.bestStreak, 'personal best', 'var(--accent)'));
+  container.appendChild(grid2);
+
+  // ── Dangerous FP warning ────────────────────────────────────────
+  if (sc.fpWhenTP > 0) {
+    var warn = document.createElement('div');
+    warn.style.cssText = 'background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.25);border-radius:3px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px;';
+    var wIcon = document.createElement('span'); wIcon.style.cssText = 'font-size:18px;flex-shrink:0;'; wIcon.textContent = '\u26A0\uFE0F';
+    var wText = document.createElement('div');
+    var wTitle = document.createElement('div'); wTitle.style.cssText = 'font-weight:700;color:var(--red);font-size:12px;margin-bottom:4px;'; wTitle.textContent = sc.fpWhenTP + ' True Positive' + (sc.fpWhenTP>1?'s':'') + ' Closed as False Positive';
+    var wSub = document.createElement('div'); wSub.style.cssText = 'font-size:11px;color:var(--text-secondary);line-height:1.7;'; wSub.textContent = 'This is the most dangerous triage error in a real SOC -- closing a real attack as benign means no containment, no escalation, and no IR response. Review the coaching notes on any alert marked TP that you closed as FP.';
+    wText.appendChild(wTitle); wText.appendChild(wSub);
+    warn.appendChild(wIcon); warn.appendChild(wText);
+    container.appendChild(warn);
+  }
+
+  // ── Per-category breakdown ──────────────────────────────────────
+  var catSection = document.createElement('div');
+  catSection.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:16px;margin-bottom:16px;';
+  var catTitle = document.createElement('div'); catTitle.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;'; catTitle.textContent = 'Accuracy by Alert Category';
+  catSection.appendChild(catTitle);
+
+  Object.keys(sc.byCategory).sort().forEach(function(cat) {
+    var data = sc.byCategory[cat];
+    var pct = data.total > 0 ? Math.round((data.correct/data.total)*100) : 0;
+    var barColor = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--accent)' : pct >= 40 ? 'var(--orange)' : 'var(--red)';
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:10px;';
+    var lbl = document.createElement('span'); lbl.style.cssText = 'font-size:11px;color:var(--text-secondary);width:100px;flex-shrink:0;'; lbl.textContent = cat;
+    var barWrap = document.createElement('div'); barWrap.style.cssText = 'flex:1;height:8px;background:var(--bg-elevated);border-radius:4px;overflow:hidden;';
+    var barFill = document.createElement('div'); barFill.style.cssText = 'height:100%;border-radius:4px;background:' + barColor + ';width:' + pct + '%;transition:width 0.6s;';
+    barWrap.appendChild(barFill);
+    var pctEl = document.createElement('span'); pctEl.style.cssText = 'font-family:var(--font-mono);font-size:10px;color:' + barColor + ';width:44px;text-align:right;flex-shrink:0;'; pctEl.textContent = pct + '% (' + data.correct + '/' + data.total + ')';
+    var weakLabel = pct < 60 && data.total >= 2 ? '\u26A0' : '';
+    var warnEl = document.createElement('span'); warnEl.style.cssText = 'font-size:12px;width:16px;flex-shrink:0;'; warnEl.textContent = weakLabel;
+    row.appendChild(lbl); row.appendChild(barWrap); row.appendChild(pctEl); row.appendChild(warnEl);
+    catSection.appendChild(row);
+  });
+
+  if (Object.keys(sc.byCategory).length === 0) {
+    var nocat = document.createElement('div'); nocat.style.cssText = 'color:var(--text-dim);font-size:11px;'; nocat.textContent = 'No category data yet.';
+    catSection.appendChild(nocat);
+  }
+  container.appendChild(catSection);
+
+  // ── Peer comparison ─────────────────────────────────────────────
+  var peer = document.createElement('div');
+  peer.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:16px;margin-bottom:16px;';
+  var peerTitle = document.createElement('div'); peerTitle.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;'; peerTitle.textContent = 'Peer Comparison -- Beta Cohort Averages';
+  peer.appendChild(peerTitle);
+
+  var comparisons = [
+    { label:'Triage Accuracy', yours:sc.accuracyPct, avg:BENCHMARK_STATS.accuracy_rate, unit:'%', higherBetter:true },
+    { label:'False Positive Rate', yours:sc.fpRate, avg:BENCHMARK_STATS.fp_rate, unit:'%', higherBetter:false },
+    { label:'Escalation Rate', yours:sc.escRate, avg:BENCHMARK_STATS.escalation_rate, unit:'%', higherBetter:null },
+    { label:'Verdict Accuracy', yours:sc.verdictAccPct, avg:BENCHMARK_STATS.verdict_accuracy, unit:'%', higherBetter:true }
+  ];
+
+  comparisons.forEach(function(c) {
+    if (c.yours === null) return;
+    var diff = c.yours - c.avg;
+    var better = c.higherBetter === null ? null : (c.higherBetter ? diff > 0 : diff < 0);
+    var diffColor = better === true ? 'var(--green)' : better === false ? 'var(--orange)' : 'var(--text-dim)';
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);';
+    var left = document.createElement('div'); left.style.cssText = 'font-size:12px;color:var(--text-secondary);'; left.textContent = c.label;
+    var right = document.createElement('div'); right.style.cssText = 'display:flex;gap:16px;align-items:center;font-family:var(--font-mono);font-size:11px;';
+    var avgEl = document.createElement('span'); avgEl.style.cssText = 'color:var(--text-dim);'; avgEl.textContent = 'Avg: ' + c.avg + c.unit;
+    var youEl = document.createElement('span'); youEl.style.cssText = 'color:var(--text-primary);font-weight:700;'; youEl.textContent = 'You: ' + c.yours + c.unit;
+    var diffEl = document.createElement('span'); diffEl.style.cssText = 'color:' + diffColor + ';min-width:40px;text-align:right;'; diffEl.textContent = (diff > 0 ? '+' : '') + diff + c.unit;
+    right.appendChild(avgEl); right.appendChild(youEl); right.appendChild(diffEl);
+    row.appendChild(left); row.appendChild(right);
+    peer.appendChild(row);
+  });
+
+  var peerNote = document.createElement('div'); peerNote.style.cssText = 'font-size:10px;color:var(--text-dim);margin-top:10px;font-style:italic;'; peerNote.textContent = 'Averages based on anonymized data from the initial beta testing cohort (3 testers, 14-day window).';
+  peer.appendChild(peerNote);
+  container.appendChild(peer);
+
+  // ── Improvement tips ────────────────────────────────────────────
+  var tips = [];
+  if (sc.fpWhenTP > 0) tips.push({ color:'var(--red)', icon:'\u26A0', text:'You closed ' + sc.fpWhenTP + ' real attack' + (sc.fpWhenTP>1?'s':'') + ' as False Positive. Review the Analyst Guide section on confirming FPs before closing.' });
+  if (sc.fpRate > BENCHMARK_STATS.fp_rate + 10) tips.push({ color:'var(--orange)', icon:'\u{1F4CA}', text:'Your FP rate is above the beta average. This often means closing alerts too quickly before enrichment is complete. Make sure all fields are filled before deciding.' });
+  if (sc.thoroughnessPct < 70) tips.push({ color:'var(--orange)', icon:'\u{1F4CB}', text:'Your investigation depth is ' + sc.thoroughnessPct + '%. Working through the full checklist on each alert trains the methodology, not just the answer.' });
+  if (sc.accuracyPct >= 80 && sc.currentStreak >= 5) tips.push({ color:'var(--green)', icon:'\u2713', text:'Strong accuracy and a ' + sc.currentStreak + '-alert correct streak. You are building consistent analyst instinct.' });
+  if (sc.accuracyPct >= 90) tips.push({ color:'var(--green)', icon:'\u{1F3AF}', text:'90%+ triage accuracy puts you in the top range of this cohort. Consider switching to Tier 2 alerts if you have not already.' });
+
+  if (tips.length > 0) {
+    var tipsSection = document.createElement('div');
+    tipsSection.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:16px;';
+    var tipsTitle = document.createElement('div'); tipsTitle.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;'; tipsTitle.textContent = 'Coaching Notes';
+    tipsSection.appendChild(tipsTitle);
+    tips.forEach(function(tip) {
+      var t = document.createElement('div'); t.style.cssText = 'display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;font-size:12px;color:var(--text-secondary);line-height:1.7;';
+      var ic = document.createElement('span'); ic.style.cssText = 'color:' + tip.color + ';flex-shrink:0;font-size:14px;'; ic.textContent = tip.icon;
+      var tx = document.createElement('span'); tx.textContent = tip.text;
+      t.appendChild(ic); t.appendChild(tx); tipsSection.appendChild(t);
+    });
+    container.appendChild(tipsSection);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// INVESTIGATION TIMER
+// ═══════════════════════════════════════════════════
+var _timerInterval = null;
+var _timerStart    = null;
+var _timerAlertId  = null;
+
+function startInvestigationTimer(alertId) {
+  if (_timerAlertId === alertId) return; // already running for this alert
+  stopInvestigationTimer();
+  _timerAlertId = alertId;
+  _timerStart   = Date.now();
+  var state = (getAlerts()[alertId] || {});
+  if (state.claimed_at) _timerStart = state.claimed_at; // use actual claim time
+
+  var timerEl = document.getElementById('modal-timer');
+  if (!timerEl) return;
+  timerEl.style.display = 'flex';
+
+  _timerInterval = setInterval(function() {
+    var elapsed = Math.floor((Date.now() - _timerStart) / 1000);
+    var mins = Math.floor(elapsed / 60);
+    var secs = elapsed % 60;
+    var display = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+    var tc = document.getElementById('modal-timer-count');
+    if (tc) tc.textContent = display;
+    // Color coding: green < 3min, orange 3-7min, red > 7min
+    var col = elapsed < 180 ? 'var(--green)' : elapsed < 420 ? 'var(--orange)' : 'var(--red)';
+    if (tc) tc.style.color = col;
+  }, 1000);
+}
+
+function stopInvestigationTimer() {
+  if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+  _timerAlertId = null;
+  var timerEl = document.getElementById('modal-timer');
+  if (timerEl) timerEl.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════
+// ALERT AGING
+// ═══════════════════════════════════════════════════
+var _agingInterval = null;
+
+function startAlertAging() {
+  if (_agingInterval) clearInterval(_agingInterval);
+  _agingInterval = setInterval(updateAlertAging, 30000); // check every 30s
+  updateAlertAging();
+}
+
+function updateAlertAging() {
+  var alertState = getAlerts();
+  var now = Date.now();
+  var SLA_WARNING_MS = 5 * 60 * 1000;  // 5 minutes
+
+  document.querySelectorAll('[data-alert-id]').forEach(function(row) {
+    var aid = row.getAttribute('data-alert-id');
+    var state = alertState[aid] || {};
+    var existing = row.querySelector('.aging-badge');
+
+    // Only flag claimed but not yet decided alerts
+    if (state.claimed && state.claimed_at && !state.decided_at) {
+      var elapsed = now - state.claimed_at;
+      if (elapsed > SLA_WARNING_MS) {
+        if (!existing) {
+          var badge = document.createElement('span');
+          badge.className = 'aging-badge';
+          badge.style.cssText = 'font-family:var(--font-mono);font-size:8px;color:var(--orange);border:1px solid rgba(255,153,0,0.4);padding:1px 5px;border-radius:2px;margin-left:6px;animation:pulse 2s infinite;';
+          badge.textContent = '\u23F1 OPEN';
+          var statusCell = row.querySelector('.status-cell');
+          if (statusCell) statusCell.appendChild(badge);
+        }
+      }
+    } else {
+      if (existing) existing.remove();
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// ESCALATION HANDOFF NOTE
+// ═══════════════════════════════════════════════════
+function showEscalationHandoff(alertId, onConfirm) {
+  var alert = ALERT_LIBRARY.find(function(a){ return a.id === alertId; });
+  if (!alert) { onConfirm(); return; }
+
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:3000;display:flex;align-items:center;justify-content:center;padding:24px;';
+
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:var(--bg-card);border:1px solid var(--red);border-radius:4px;width:100%;max-width:560px;padding:24px;';
+
+  var title = document.createElement('div'); title.style.cssText = 'font-weight:700;color:var(--red);font-size:15px;margin-bottom:4px;'; title.innerHTML = '\u{1F680} Escalation Handoff Note';
+  var sub = document.createElement('div'); sub.style.cssText = 'font-size:11px;color:var(--text-dim);margin-bottom:16px;font-family:var(--font-mono);'; sub.textContent = alert.title + ' \u2022 ' + alert.severity + ' \u2022 ' + alert.mitre_id;
+  var prompt = document.createElement('div'); prompt.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:10px;line-height:1.7;'; prompt.textContent = 'Write a one to two sentence handoff note for the Tier 2 analyst. Include why you escalated and what they should investigate first.';
+  var ta = document.createElement('textarea');
+  ta.placeholder = 'e.g. Escalating encoded PowerShell from WINWORD.EXE on CORP-WKS-033 -- user not logged in, unsigned binary dropped to AppData, active C2 outbound to 185.220.101.45:4444. Recommend immediate host isolation and memory capture before any remediation.';
+  ta.style.cssText = 'width:100%;min-height:90px;background:#050a0e;border:1px solid var(--border);border-radius:3px;padding:10px;font-family:var(--font-mono);font-size:11px;color:#7aadcc;resize:vertical;outline:none;box-sizing:border-box;margin-bottom:8px;';
+  var errEl = document.createElement('div'); errEl.style.cssText = 'color:var(--red);font-size:11px;margin-bottom:8px;display:none;'; errEl.textContent = 'Write at least 20 characters before escalating.';
+  var btnRow = document.createElement('div'); btnRow.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;';
+  var cancelBtn = document.createElement('button'); cancelBtn.style.cssText = 'background:transparent;border:1px solid var(--border);border-radius:3px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);cursor:pointer;'; cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function(){ document.body.removeChild(overlay); };
+  var confirmBtn = document.createElement('button'); confirmBtn.style.cssText = 'background:rgba(255,68,68,0.1);border:1px solid var(--red);border-radius:3px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;color:var(--red);cursor:pointer;font-weight:700;'; confirmBtn.textContent = '\u{1F680} Confirm Escalation';
+  confirmBtn.onclick = function() {
+    if (ta.value.trim().length < 20) { errEl.style.display='block'; return; }
+    // Store the handoff note
+    var alertState = getAlerts();
+    if (!alertState[alertId]) alertState[alertId] = {};
+    alertState[alertId].handoff_note = ta.value.trim();
+    saveAlerts(alertState);
+    document.body.removeChild(overlay);
+    onConfirm();
+  };
+  btnRow.appendChild(cancelBtn); btnRow.appendChild(confirmBtn);
+  [title,sub,prompt,ta,errEl,btnRow].forEach(function(el){ modal.appendChild(el); });
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  setTimeout(function(){ ta.focus(); }, 100);
+}
+
+// ═══════════════════════════════════════════════════
+// COACHING REACTION SYSTEM
+// ═══════════════════════════════════════════════════
+function triggerCoachingReaction(alertId, decision, isCorrect) {
+  var alert = ALERT_LIBRARY.find(function(a){ return a.id === alertId; });
+  if (!alert) return;
+
+  var coachPanel = document.getElementById('coaching-panel');
+  if (!coachPanel) return;
+
+  // Severity-based reaction intensity
+  var isCritical = alert.severity === 'Critical';
+  var isHigh = alert.severity === 'High';
+
+  if (isCorrect) {
+    // Flash green border on modal
+    var modalEl = document.querySelector('#alert-modal .modal');
+    if (modalEl) {
+      modalEl.style.transition = 'box-shadow 0.3s';
+      modalEl.style.boxShadow = '0 0 0 2px var(--green), 0 8px 32px rgba(0,255,136,0.15)';
+      setTimeout(function(){ modalEl.style.boxShadow = ''; }, 1500);
+    }
+    // Critical correct = extra positive feedback
+    if (isCritical) {
+      irToast('\u{1F3AF} Critical alert handled correctly. Strong work.', 'success');
+    }
+  } else {
+    // Wrong on critical = urgent coaching panel
+    if (isCritical || isHigh) {
+      coachPanel.style.borderColor = 'rgba(255,68,68,0.4)';
+      coachPanel.style.background = 'rgba(255,68,68,0.04)';
+      var urgentLabel = document.querySelector('.coaching-header');
+      if (urgentLabel) {
+        urgentLabel.style.color = 'var(--red)';
+        urgentLabel.innerHTML = '\u26A0 Critical Alert -- Review Required';
+      }
+      irToast('Incorrect on a ' + alert.severity + ' alert. Review the coaching notes carefully.', 'error');
+    } else {
+      irToast('Review the coaching notes to see what indicators were missed.', 'warn');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// LIVE ALERT TICKER
+// ═══════════════════════════════════════════════════
+var _tickerMessages = [
+  '\u26A0 New alert: Suspicious login from geo-anomaly IP -- Identity',
+  '\u{1F534} Critical: LSASS access detected on domain controller',
+  '\u{1F4E7} Email alert: Phishing link clicked by Finance user',
+  '\u26A0 EDR: Encoded PowerShell execution detected -- CORP-WKS-041',
+  '\u{1F50D} DNS anomaly: Beaconing pattern on LEGAL-WKS-018',
+  '\u{1F4CB} Workbench: Case CASE-' + Date.now() + ' escalated to IR',
+  '\u26A0 DLP alert: Large upload to external storage detected',
+  '\u{1F534} Critical: Scheduled task created by unsigned binary',
+  '\u{1F9E0} Threat Intel: IOC match on known Cobalt Strike C2',
+  '\u26A0 Identity: 14 failed logins followed by off-hours success'
+];
+var _tickerIdx = 0;
+var _tickerTimer = null;
+
+function startAlertTicker() {
+  var ticker = document.getElementById('alert-ticker');
+  if (!ticker) return;
+  if (_tickerTimer) clearInterval(_tickerTimer);
+  _tickerTimer = setInterval(function() {
+    _tickerIdx = (_tickerIdx + 1) % _tickerMessages.length;
+    var msg = _tickerMessages[_tickerIdx];
+    ticker.style.opacity = '0';
+    setTimeout(function() {
+      ticker.textContent = msg;
+      ticker.style.opacity = '1';
+    }, 300);
+  }, 4000);
+}
+function handleEscalate() {
+  if (!currentAlertId) return;
+  var stateCheck = (getAlerts())[currentAlertId] || {};
+  if (!stateCheck.claimed) {
+    var cb = document.getElementById('claim-ticket-btn');
+    if (cb) { cb.style.animation='none'; cb.offsetHeight; cb.style.animation='pulse 0.4s 2'; }
+    return;
+  }
+  var validationIssues = validateBeforeDecision();
+  if (validationIssues.length > 0) { showValidationPopup(validationIssues); updateNotesWarning(); return; }
+  showEscalationHandoff(currentAlertId, function() { makeDecision('escalated'); });
+}
+// ═══════════════════════════════════════════════════
+// IR INTERACTIVE OVERHAUL v20
+// Real-time scope tracking, consequence feedback,
+// visual timeline, simulated comms, severity clock
+// ═══════════════════════════════════════════════════
+
+// ── Simulated IR comms messages keyed by trigger ─────────────────────
+var IR_COMMS = {
+  'case_opened': [
+    { from:'IR Lead',    role:'ir',    msg:'Case opened. Assign an IR lead and confirm scope before starting containment. What is the blast radius?' },
+    { from:'SOC Manager',role:'mgr',   msg:'Acknowledged. This has leadership attention. Keep this channel updated every 30 minutes.' }
+  ],
+  'isolate_host': [
+    { from:'IR Lead',    role:'ir',    msg:'Host isolation confirmed. Verify the EDR agent shows containment status before proceeding. Do NOT reboot.' },
+    { from:'IT Help Desk',role:'it',   msg:'We are getting calls from users saying they cannot connect to that machine. Confirming it is intentional.' },
+    { from:'IR Lead',    role:'ir',    msg:'Confirm: is forensic imaging queued before any remediation on the isolated host?' }
+  ],
+  'revoke_sessions': [
+    { from:'IR Lead',    role:'ir',    msg:'Session revocation pushed. Check Azure AD sign-in logs for any new auth attempts from the same IP in the next 15 minutes.' },
+    { from:'SOC Manager',role:'mgr',   msg:'User has been notified via phone. HR is aware. Legal hold is in place.' }
+  ],
+  'reset_credentials': [
+    { from:'IR Lead',    role:'ir',    msg:'Creds rotated. Confirm new password was communicated out-of-band -- do not send over email if account may be monitored.' },
+    { from:'Help Desk',  role:'it',    msg:'Password reset ticket opened. Notifying user via personal cell per IR protocol.' }
+  ],
+  'preserve_evidence': [
+    { from:'IR Lead',    role:'ir',    msg:'Evidence preservation started. Log the chain of custody now. Who has physical or logical access to the image?' },
+    { from:'Legal',      role:'legal', msg:'Evidence hold confirmed. Do not alter or delete any logs. We may need these for regulatory notification.' }
+  ],
+  'rotate_krbtgt': [
+    { from:'IR Lead',    role:'ir',    msg:'CRITICAL: KRBTGT reset requires TWO resets with at least 10 hours between them. First reset invalidates existing tickets. Second reset prevents ticket replay. Do NOT skip the second reset.' },
+    { from:'CISO',       role:'ciso',  msg:'Board has been briefed on domain compromise. Legal and cyber insurance are engaged. Proceed with full domain password rotation after KRBTGT.' }
+  ],
+  'block_ip': [
+    { from:'IR Lead',    role:'ir',    msg:'Perimeter block applied. Check if this IP appears in logs from other endpoints -- C2 infrastructure is often shared across multiple implants.' },
+    { from:'Threat Intel',role:'ti',   msg:'That IP is associated with a known Cobalt Strike team server cluster. Blocking the /24 subnet may be warranted. Sending IOC list now.' }
+  ],
+  'block_domain': [
+    { from:'Threat Intel',role:'ti',   msg:'Domain blocked. Registration date confirms this was infrastructure set up specifically for this campaign. Any other recently registered domains from the same registrar?' },
+    { from:'IR Lead',    role:'ir',    msg:'Confirm the block is applied at DNS level, not just proxy. DNS-only blocks can be bypassed with hardcoded IPs.' }
+  ],
+  'disable_account': [
+    { from:'HR',         role:'hr',    msg:'Account disabled. HR has been notified per policy. We need to determine if this was insider threat or external compromise before further action.' },
+    { from:'IR Lead',    role:'ir',    msg:'Check the last 30 days of this account\'s audit logs. Look for unusual data access, forwarding rules, or new OAuth app grants.' }
+  ],
+  'phase_eradication': [
+    { from:'IR Lead',    role:'ir',    msg:'Containment phase complete. Moving to eradication. Primary goal: find and remove ALL attacker artifacts. Assume persistence mechanisms exist that you have not found yet.' },
+    { from:'CISO',       role:'ciso',  msg:'Containment confirmed. I need a scope summary for the board update in 2 hours. How many systems were affected?' }
+  ],
+  'phase_recovery': [
+    { from:'IR Lead',    role:'ir',    msg:'Eradication complete. Before restoring any system: verify the root cause is addressed, the vulnerability is patched, and monitoring is in place to detect reinfection.' },
+    { from:'SOC Manager',role:'mgr',   msg:'Recovery phase started. 48-72 hour enhanced monitoring window begins now. Any anomaly on affected systems gets immediate escalation.' }
+  ],
+  'phase_lessons': [
+    { from:'IR Lead',    role:'ir',    msg:'Great work closing this incident. Lessons learned is not optional. Document what we missed, what we caught, and what we would do differently. This directly improves our detection posture.' },
+    { from:'CISO',       role:'ciso',  msg:'Legal has completed their review. Documenting the deconfliction notes is required for our regulatory file. Do not skip that section.' }
+  ],
+  'rebuild_host': [
+    { from:'IR Lead',    role:'ir',    msg:'Rebuild from clean image confirmed. Verify the image date is from BEFORE the suspected initial access date -- rebuilding from a compromised image just restarts the clock.' },
+    { from:'IT Ops',     role:'it',    msg:'Rebuild queued. Estimated 4 hours. We are restoring user data from the last known-clean backup. Confirming backup integrity now.' }
+  ],
+  'case_submitted': [
+    { from:'CISO',       role:'ciso',  msg:'Incident formally closed. Excellent work. The lessons learned report will be reviewed in the next tabletop exercise. This case is now in the regulatory record.' },
+    { from:'SOC Manager',role:'mgr',   msg:'Case closed. This experience will feed into our next detection rule update. Well handled.' }
+  ]
+};
+
+// Role badge colors
+var IR_ROLE_COLORS = {
+  ir:    { bg:'rgba(231,76,60,0.1)',    border:'rgba(231,76,60,0.3)',    text:'#e74c3c' },
+  mgr:   { bg:'rgba(0,212,255,0.08)',   border:'rgba(0,212,255,0.25)',   text:'#00d4ff' },
+  ciso:  { bg:'rgba(155,89,182,0.1)',   border:'rgba(155,89,182,0.3)',   text:'#9b59b6' },
+  legal: { bg:'rgba(52,152,219,0.1)',   border:'rgba(52,152,219,0.3)',   text:'#3498db' },
+  it:    { bg:'rgba(39,174,96,0.1)',    border:'rgba(39,174,96,0.3)',    text:'#27ae60' },
+  hr:    { bg:'rgba(230,126,34,0.1)',   border:'rgba(230,126,34,0.3)',   text:'#e67e22' },
+  ti:    { bg:'rgba(0,212,255,0.06)',   border:'rgba(0,212,255,0.2)',    text:'#00d4ff' }
+};
+
+// ── IR comms state ────────────────────────────────────────────────────
+function getIRComms(alertId) { return DB.get('ircomms_' + alertId) || []; }
+function saveIRComms(alertId, msgs) { DB.set('ircomms_' + alertId, msgs); }
+
+function addIRComm(alertId, trigger) {
+  var msgs = IR_COMMS[trigger];
+  if (!msgs || !msgs.length) return;
+  var existing = getIRComms(alertId);
+  msgs.forEach(function(msg) {
+    existing.push({ from:msg.from, role:msg.role, msg:msg.msg, trigger:trigger, ts:Date.now() });
+  });
+  saveIRComms(alertId, existing);
+  // Animate new messages into the comms feed
+  var feed = document.getElementById('ir-comms-feed');
+  if (feed) renderIRCommsFeed(alertId, feed, true);
+}
+
+function renderIRCommsFeed(alertId, container, animate) {
+  var msgs = getIRComms(alertId);
+  container.innerHTML = '';
+  if (msgs.length === 0) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'font-size:11px;color:var(--text-dim);padding:8px;font-style:italic;';
+    empty.textContent = 'Team comms will appear here as you work the case.';
+    container.appendChild(empty);
+    return;
+  }
+  msgs.forEach(function(msg, idx) {
+    var rc = IR_ROLE_COLORS[msg.role] || IR_ROLE_COLORS.it;
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:8px 10px;border-radius:3px;margin-bottom:6px;background:' + rc.bg + ';border:1px solid ' + rc.border + ';' +
+      (animate && idx === msgs.length - 1 ? 'animation:fadeIn 0.4s ease;' : '');
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:4px;';
+    var fromEl = document.createElement('span');
+    fromEl.style.cssText = 'font-family:var(--font-mono);font-size:9px;font-weight:700;color:' + rc.text + ';';
+    fromEl.textContent = msg.from;
+    var tsEl = document.createElement('span');
+    tsEl.style.cssText = 'font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-left:auto;';
+    tsEl.textContent = new Date(msg.ts).toLocaleTimeString();
+    hdr.appendChild(fromEl); hdr.appendChild(tsEl);
+    var msgEl = document.createElement('div');
+    msgEl.style.cssText = 'font-size:11px;color:var(--text-secondary);line-height:1.6;';
+    msgEl.textContent = msg.msg;
+    row.appendChild(hdr); row.appendChild(msgEl);
+    container.appendChild(row);
+  });
+  // Auto-scroll to bottom
+  container.scrollTop = container.scrollHeight;
+}
+
+// ── IR Severity Clock ─────────────────────────────────────────────────
+var _irClockInterval = null;
+
+function startIRClock(alertId) {
+  if (_irClockInterval) clearInterval(_irClockInterval);
+  var clockEl = document.getElementById('ir-severity-clock');
+  if (!clockEl) return;
+
+  var alert = ALERT_LIBRARY.find(function(a){ return a.id === alertId; });
+  var alertState = getAlerts()[alertId] || {};
+  var startTime = alertState.decided_at || Date.now();
+
+  // Breach notification windows by severity
+  var windows = { Critical: 3600, High: 14400, Medium: 86400, Low: 259200 };
+  var slaSeconds = windows[alert ? alert.severity : 'High'] || 14400;
+  var sevColor = { Critical:'var(--red)', High:'var(--orange)', Medium:'var(--yellow)', Low:'var(--green)' };
+  var col = sevColor[alert ? alert.severity : 'High'] || 'var(--orange)';
+
+  function tick() {
+    var elapsed = Math.floor((Date.now() - startTime) / 1000);
+    var remaining = Math.max(0, slaSeconds - elapsed);
+    var pct = Math.min(100, (elapsed / slaSeconds) * 100);
+
+    var h = Math.floor(elapsed / 3600);
+    var m = Math.floor((elapsed % 3600) / 60);
+    var s = elapsed % 60;
+    var elapsedStr = (h > 0 ? h + 'h ' : '') + m + 'm ' + s + 's';
+
+    var rh = Math.floor(remaining / 3600);
+    var rm = Math.floor((remaining % 3600) / 60);
+    var remainStr = remaining === 0 ? 'WINDOW CLOSED' : (rh > 0 ? rh + 'h ' : '') + rm + 'm remaining';
+
+    var urgency = pct > 80 ? 'var(--red)' : pct > 50 ? 'var(--orange)' : col;
+
+    clockEl.innerHTML =
+      '<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">IR Severity Clock</div>' +
+      '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">' +
+        '<span style="font-size:22px;font-weight:700;color:' + urgency + ';font-family:var(--font-display);">' + elapsedStr + '</span>' +
+        '<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">elapsed</span>' +
+      '</div>' +
+      '<div style="height:4px;background:var(--bg-elevated);border-radius:2px;margin-bottom:4px;overflow:hidden;">' +
+        '<div style="height:100%;border-radius:2px;background:' + urgency + ';width:' + pct + '%;transition:width 1s;"></div>' +
+      '</div>' +
+      '<div style="font-family:var(--font-mono);font-size:9px;color:' + urgency + ';">' + remainStr + '</div>' +
+      '<div style="font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:2px;">Notification window: ' + (slaSeconds/3600).toFixed(1) + 'h (' + (alert ? alert.severity : '') + ')</div>';
+  }
+
+  tick();
+  _irClockInterval = setInterval(tick, 1000);
+}
+
+function stopIRClock() {
+  if (_irClockInterval) { clearInterval(_irClockInterval); _irClockInterval = null; }
+}
+
+// ── Live Scope Tracker ────────────────────────────────────────────────
+function renderScopeTracker(alertId) {
+  var container = document.getElementById('ir-scope-tracker');
+  if (!container) return;
+  container.innerHTML = '';
+
+  var ctx = getIRContext(alertId, ALERT_LIBRARY.find(function(a){ return a.id === alertId; }));
+  var ircases = getIRCases();
+  var irc = ircases[alertId] || { actions:{} };
+  var actions = irc.actions || {};
+
+  var title = document.createElement('div');
+  title.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;';
+  title.textContent = 'Live Scope';
+  container.appendChild(title);
+
+  function scopeSection(label, items, actionType, appliedColor, icon) {
+    if (!items || !items.length) return;
+    var sec = document.createElement('div'); sec.style.marginBottom = '10px';
+    var lbl = document.createElement('div'); lbl.style.cssText = 'font-family:var(--font-mono);font-size:8px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;'; lbl.textContent = label;
+    sec.appendChild(lbl);
+    items.forEach(function(item) {
+      // Check if action has been applied for this item
+      var isContained = Object.keys(actions).some(function(k) {
+        var a = actions[k];
+        return a && !a.reversed && a.type === actionType && a.value && a.value.indexOf(item) >= 0;
+      });
+      var isReversed = Object.keys(actions).some(function(k) {
+        var a = actions[k];
+        return a && a.reversed && a.type === actionType && a.value && a.value.indexOf(item) >= 0;
+      });
+
+      var chip = document.createElement('div');
+      var chipColor = isContained ? appliedColor : 'rgba(255,68,68,0.15)';
+      var chipBorder = isContained ? appliedColor + '66' : 'rgba(255,68,68,0.4)';
+      var textColor = isContained ? appliedColor : 'var(--red)';
+      chip.style.cssText = 'display:flex;align-items:center;gap:6px;background:' + chipColor + ';border:1px solid ' + chipBorder + ';border-radius:2px;padding:5px 8px;margin-bottom:4px;transition:all 0.4s;';
+
+      var statusDot = document.createElement('span');
+      statusDot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:' + (isContained ? appliedColor : 'var(--red)') + ';flex-shrink:0;' + (isContained ? '' : 'animation:pulse 1.5s infinite;');
+      var itemEl = document.createElement('span'); itemEl.style.cssText = 'font-family:var(--font-mono);font-size:10px;color:' + textColor + ';flex:1;'; itemEl.textContent = item;
+      var statusEl = document.createElement('span'); statusEl.style.cssText = 'font-family:var(--font-mono);font-size:8px;color:' + textColor + ';white-space:nowrap;';
+      statusEl.textContent = isContained ? (icon + ' CONTAINED') : isReversed ? '\u{1F7E2} RELEASED' : '\u26A0 ACTIVE';
+      chip.appendChild(statusDot); chip.appendChild(itemEl); chip.appendChild(statusEl);
+      sec.appendChild(chip);
+    });
+    container.appendChild(sec);
+  }
+
+  scopeSection('Hosts', ctx.hosts, 'isolate_host', '#27ae60', '\u{1F6AB}');
+  scopeSection('Users', ctx.users, 'disable_account', '#3498db', '\u{1F6D1}');
+  scopeSection('IP Addresses', ctx.ips, 'block_ip', '#e67e22', '\u{1F6AB}');
+  scopeSection('Domains', ctx.domains, 'block_domain', '#e67e22', '\u{1F310}');
+  scopeSection('Hashes', ctx.hashes, 'block_hash', '#9b59b6', '\u{1F9EE}');
+
+  // Scope summary count
+  var totalItems = (ctx.hosts||[]).length + (ctx.users||[]).length + (ctx.ips||[]).length + (ctx.domains||[]).length + (ctx.hashes||[]).length;
+  var containedCount = Object.values(actions).filter(function(a){ return a && !a.reversed; }).length;
+  var summary = document.createElement('div');
+  summary.style.cssText = 'border-top:1px solid var(--border);padding-top:8px;margin-top:4px;font-family:var(--font-mono);font-size:9px;color:var(--text-dim);';
+  summary.textContent = containedCount + ' action' + (containedCount!==1?'s':'') + ' applied \u2022 ' + totalItems + ' IOC' + (totalItems!==1?'s':'') + ' in scope';
+  container.appendChild(summary);
+}
+
+// ── Visual IR Timeline ────────────────────────────────────────────────
+function renderIRTimeline(alertId) {
+  var container = document.getElementById('ir-timeline');
+  if (!container) return;
+  container.innerHTML = '';
+
+  var actions = getIRActions().filter(function(a){ return a.alertId === alertId; });
+  var ircases = getIRCases();
+  var irc = ircases[alertId] || {};
+  var alertState = getAlerts()[alertId] || {};
+
+  var title = document.createElement('div');
+  title.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;';
+  title.textContent = 'Case Timeline';
+  container.appendChild(title);
+
+  if (actions.length === 0) {
+    var empty = document.createElement('div'); empty.style.cssText = 'font-size:11px;color:var(--text-dim);font-style:italic;'; empty.textContent = 'No actions yet.';
+    container.appendChild(empty);
+    return;
+  }
+
+  var timelineWrap = document.createElement('div');
+  timelineWrap.style.cssText = 'position:relative;padding-left:20px;';
+
+  // Vertical line
+  var line = document.createElement('div');
+  line.style.cssText = 'position:absolute;left:6px;top:8px;bottom:8px;width:1px;background:var(--border);';
+  timelineWrap.appendChild(line);
+
+  actions.forEach(function(action, idx) {
+    var def = IR_ACTION_DEFS[action.type] || {};
+    var isReversed = action.reversed;
+    var phaseColors = { containment:'var(--red)', eradication:'var(--orange)', recovery:'var(--green)', lessons_learned:'var(--accent)', reversal:'var(--text-dim)' };
+    var dotColor = isReversed ? 'var(--text-dim)' : (phaseColors[action.phase] || 'var(--accent)');
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;opacity:' + (isReversed?'0.5':'1') + ';';
+
+    var dot = document.createElement('div');
+    dot.style.cssText = 'width:13px;height:13px;border-radius:50%;background:' + dotColor + ';flex-shrink:0;margin-top:2px;margin-left:-20px;border:2px solid var(--bg-primary);position:relative;z-index:1;';
+
+    var content = document.createElement('div'); content.style.flex = '1';
+    var topRow = document.createElement('div'); topRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:2px;';
+    var actionName = document.createElement('span'); actionName.style.cssText = 'font-size:11px;font-weight:600;color:' + (isReversed?'var(--text-dim)':'var(--text-primary)') + ';' + (isReversed?'text-decoration:line-through;':''); actionName.textContent = (def.icon||'') + ' ' + (def.label || action.type);
+    var ts = document.createElement('span'); ts.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-left:auto;'; ts.textContent = new Date(action.ts).toLocaleTimeString();
+    topRow.appendChild(actionName); topRow.appendChild(ts);
+    content.appendChild(topRow);
+
+    if (action.value) {
+      var val = document.createElement('div'); val.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);'; val.textContent = action.value;
+      content.appendChild(val);
+    }
+
+    var phaseBadge = document.createElement('span'); phaseBadge.style.cssText = 'font-family:var(--font-mono);font-size:8px;color:' + dotColor + ';'; phaseBadge.textContent = (action.phase||'').toUpperCase().replace(/_/g,' ');
+    content.appendChild(phaseBadge);
+
+    row.appendChild(dot); row.appendChild(content);
+    timelineWrap.appendChild(row);
+  });
+
+  container.appendChild(timelineWrap);
+}
+
+// ── Phase completion summary modal ────────────────────────────────────
+function showPhaseCompletionSummary(alertId, currentPhase, nextPhase, onConfirm) {
+  var ircases = getIRCases();
+  var irc = ircases[alertId] || { actions:{} };
+  var phaseActions = Object.values(irc.actions||{}).filter(function(a){ return a && a.phase === currentPhase && !a.reversed; });
+
+  if (phaseActions.length === 0) {
+    irToast('Complete at least one action before advancing.', 'warn');
+    return;
+  }
+
+  var nextInfo = IR_PHASES.find(function(p){ return p.id === nextPhase; });
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:3000;display:flex;align-items:center;justify-content:center;padding:24px;';
+
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:4px;width:100%;max-width:500px;padding:24px;';
+
+  var currentInfo = IR_PHASES.find(function(p){ return p.id === currentPhase; });
+  var title = document.createElement('div'); title.style.cssText = 'font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:4px;'; title.textContent = (currentInfo?currentInfo.icon:'') + ' Phase Complete: ' + (currentInfo?currentInfo.label:'');
+  var sub = document.createElement('div'); sub.style.cssText = 'font-size:11px;color:var(--text-dim);margin-bottom:16px;font-family:var(--font-mono);'; sub.textContent = 'Review what you accomplished before advancing to ' + (nextInfo?nextInfo.label:'next phase');
+  modal.appendChild(title); modal.appendChild(sub);
+
+  // Summary of actions taken
+  var summaryTitle = document.createElement('div'); summaryTitle.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'; summaryTitle.textContent = 'Actions Completed This Phase';
+  modal.appendChild(summaryTitle);
+
+  phaseActions.forEach(function(a) {
+    var def = IR_ACTION_DEFS[a.type] || {};
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-primary);border-radius:2px;margin-bottom:4px;';
+    var chk = document.createElement('span'); chk.style.cssText = 'color:var(--green);font-size:13px;'; chk.textContent = '\u2713';
+    var lbl = document.createElement('span'); lbl.style.cssText = 'font-size:12px;color:var(--text-secondary);'; lbl.textContent = (def.icon||'') + ' ' + (def.label||a.type) + (a.value ? ' -- ' + a.value : '');
+    row.appendChild(chk); row.appendChild(lbl); modal.appendChild(row);
+  });
+
+  // Missing recommended actions warning
+  var ctx = getIRContext(alertId, ALERT_LIBRARY.find(function(al){ return al.id === alertId; }));
+  var recommended = ctx['recommended_' + currentPhase] || [];
+  var applied = phaseActions.map(function(a){ return a.type; });
+  var missed = recommended.filter(function(r){ return applied.indexOf(r) === -1; });
+  if (missed.length > 0) {
+    var warnBox = document.createElement('div'); warnBox.style.cssText = 'background:rgba(255,153,0,0.06);border:1px solid rgba(255,153,0,0.25);border-radius:3px;padding:10px 12px;margin-top:12px;';
+    var warnTitle = document.createElement('div'); warnTitle.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--orange);margin-bottom:6px;'; warnTitle.textContent = '\u26A0 Recommended Actions Not Taken';
+    warnBox.appendChild(warnTitle);
+    missed.forEach(function(m) {
+      var def = IR_ACTION_DEFS[m] || {};
+      var row = document.createElement('div'); row.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-bottom:3px;'; row.textContent = '\u25BA ' + (def.label||m) + ' -- consider returning to complete this';
+      warnBox.appendChild(row);
+    });
+    modal.appendChild(warnBox);
+  }
+
+  var btnRow = document.createElement('div'); btnRow.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;margin-top:20px;';
+  var cancelBtn = document.createElement('button'); cancelBtn.style.cssText = 'background:transparent;border:1px solid var(--border);border-radius:3px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);cursor:pointer;'; cancelBtn.textContent = '\u2190 Go Back';
+  cancelBtn.onclick = function(){ document.body.removeChild(overlay); };
+  var confirmBtn = document.createElement('button'); confirmBtn.style.cssText = 'background:' + (nextInfo?nextInfo.color:'var(--accent)') + '22;border:1px solid ' + (nextInfo?nextInfo.color:'var(--accent)') + ';border-radius:3px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;color:' + (nextInfo?nextInfo.color:'var(--accent)') + ';cursor:pointer;font-weight:700;'; confirmBtn.textContent = 'Advance to ' + (nextInfo?nextInfo.label:'Next Phase') + ' \u25B6';
+  confirmBtn.onclick = function() { document.body.removeChild(overlay); onConfirm(); };
+  btnRow.appendChild(cancelBtn); btnRow.appendChild(confirmBtn);
+  modal.appendChild(btnRow);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Fire comms for phase transition
+  addIRComm(alertId, 'phase_' + nextPhase);
+}
+
+// ── Rebuild the IR right panel to include timeline + comms ────────────
+function buildIRRightPanel(alertId) {
+  var rightPanel = document.getElementById('ir-right-panel');
+  if (!rightPanel) return;
+  rightPanel.innerHTML = '';
+
+  // Severity clock
+  var clockCard = document.createElement('div');
+  clockCard.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:12px;margin-bottom:10px;';
+  var clockContent = document.createElement('div'); clockContent.id = 'ir-severity-clock';
+  clockCard.appendChild(clockContent);
+  rightPanel.appendChild(clockCard);
+
+  // Scope tracker
+  var scopeCard = document.createElement('div');
+  scopeCard.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:12px;margin-bottom:10px;';
+  var scopeContent = document.createElement('div'); scopeContent.id = 'ir-scope-tracker';
+  scopeCard.appendChild(scopeContent);
+  rightPanel.appendChild(scopeCard);
+
+  // Visual timeline
+  var timelineCard = document.createElement('div');
+  timelineCard.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:12px;margin-bottom:10px;max-height:280px;overflow-y:auto;';
+  var timelineContent = document.createElement('div'); timelineContent.id = 'ir-timeline';
+  timelineCard.appendChild(timelineContent);
+  rightPanel.appendChild(timelineCard);
+
+  // Comms feed
+  var commsCard = document.createElement('div');
+  commsCard.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:12px;';
+  var commsTitle = document.createElement('div'); commsTitle.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;'; commsTitle.textContent = 'IR Team Comms';
+  var commsScroll = document.createElement('div'); commsScroll.id = 'ir-comms-feed'; commsScroll.style.cssText = 'max-height:260px;overflow-y:auto;';
+  commsCard.appendChild(commsTitle); commsCard.appendChild(commsScroll);
+  rightPanel.appendChild(commsCard);
+
+  // Render all panels
+  renderScopeTracker(alertId);
+  renderIRTimeline(alertId);
+  renderIRCommsFeed(alertId, commsScroll, false);
+  startIRClock(alertId);
+}
+
+// ── Override executeIRAction to trigger reactive updates ──────────────
+// executeIRAction reactive updates patched directly into original
+
+// ── Override reverseIRAction to trigger reactive updates ──────────────
+// reverseIRAction reactive updates patched directly into original
+
+// ── Override jumpIRPhase to show completion summary ───────────────────
+// jumpIRPhase completion summary now handled directly in buildPhaseAdvanceBtn
+// ═══════════════════════════════════════════════════
+// PLATFORM WALKTHROUGH
+// Fires once on first arrival at the alert queue
+// Step-by-step spotlight tour of every major section
+// ═══════════════════════════════════════════════════
+
+var WALKTHROUGH_STEPS = [
+  {
+    target:  null,
+    title:   'Welcome to SOC Lab',
+    body:    'You have completed your readiness assessment and you are cleared to work the queue. Before you dive in, let us take 60 seconds to walk through what is available to you on this platform. Use the arrows to move through each section.',
+    position:'center'
+  },
+  {
+    target:  '#sidebar',
+    title:   'Navigation Sidebar',
+    body:    'Everything on the platform lives here. The sidebar is split into three sections: Start Here for orientation and reference, Core Modules for your active work, and Analytics for tracking your performance. The hamburger button in the top-left collapses it when you need more screen space.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'alerts'",
+    title:   'Alert Queue',
+    body:    'This is your primary workspace. 76+ realistic alerts across Tier 1 and Tier 2 -- phishing, credential attacks, malware, lateral movement, ransomware, cloud misconfigs, and more. Claim a ticket, read the raw log, fill in the enrichment fields, and make a triage decision. Every decision is coached.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'workbench'",
+    title:   'Investigation Workbench',
+    body:    'When you escalate or close an alert you can open a formal case file here. Document your timeline, affected assets, indicators of compromise, hypothesis, and containment recommendations. Case files build your Portfolio. Demo cases show you what a completed investigation looks like.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'ir'",
+    title:   'Incident Response Console',
+    body:    'Escalated alerts funnel here for full IR lifecycle simulation following NIST SP 800-61. Work through Containment, Eradication, Recovery, and Lessons Learned. Apply and reverse actions, track scope live, follow simulated team comms, and submit a formal deconfliction report to close the case.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'detection'",
+    title:   'Detection Engineering Lab',
+    body:    'Three fully guided interactive demos covering Office Macro/PowerShell detection, DNS-based C2 beaconing (statistical), and persistence via scheduled tasks and registry keys. Each demo walks you through data source selection, indicator type, validation criteria, and writing your own Sigma or SPL rule before the reference answer is revealed.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'hunt'",
+    title:   'Threat Hunt Lab',
+    body:    'Five hypothesis-driven hunt scenarios covering Credential Access, Lateral Movement, Persistence, Exfiltration, and C2. Each hunt presents a hypothesis, correlated log data, and structured questions requiring written analysis. Validation hints reveal after each step.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'forensics'",
+    title:   'Forensics Lab',
+    body:    'Seven tabs covering memory forensics, log analysis, YARA rule writing, network forensics, cloud forensics, and automation. YARA exercises require writing functional rule syntax that is validated before the exercise is marked complete.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'endpoints'",
+    title:   'Endpoint Monitor',
+    body:    'Eight endpoints referenced across the alert library. Each card shows live status computed from your alert decisions -- an endpoint tied to an active escalated alert shows COMPROMISED. Close or false-positive the alert and the endpoint clears to CLEAN automatically. Alert links open the relevant modal directly.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'identities'",
+    title:   'Identity Dashboard',
+    body:    '47 user profiles across all departments with live risk scoring. Profiles under active alerts show elevated risk. Resolved alerts clear the risk automatically. Use this during investigations to cross-reference users against active alerts, typical hours, access patterns, and analyst notes.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'mitre'",
+    title:   'MITRE ATT&CK Navigator',
+    body:    'A live heatmap showing which ATT&CK techniques you have covered across triaged alerts. Every technique cell links directly to the MITRE ATT&CK documentation page. Coverage updates as you work alerts.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'metrics'",
+    title:   'Scorecard',
+    body:    'Your live performance dashboard. Tracks triage accuracy, severity-weighted score, false positive rate, mean time to decision, investigation depth, verdict accuracy, and streak. Compares your stats against the beta cohort averages and surfaces coaching tips based on your specific patterns.',
+    position:'right'
+  },
+  {
+    target:  "nav-item for 'portfolio'",
+    title:   'Portfolio Builder',
+    body:    'Generates a formatted professional summary of your training activity including alerts triaged, MITRE techniques covered, false positive rate, and case files documented. Export it as text for LinkedIn or JSON for record-keeping.',
+    position:'right'
+  },
+  {
+    target:  '#feedback-toggle-btn',
+    title:   'Feedback Button',
+    body:    'This button is always available in the top bar. If you find a bug, encounter unclear content, or have a feature idea, use it. Feedback goes directly to the Axis Security Solutions team and shapes the next version of the platform.',
+    position:'below'
+  },
+  {
+    target:  null,
+    title:   'You Are Ready',
+    body:    'That covers everything. Your alert queue is live. Start with the highest severity alerts, claim a ticket, read the log carefully, enrich the fields, and make your decision. The platform will coach you on every outcome. Good luck.',
+    position:'center',
+    isLast:  true
+  }
+];
+
+var _walkthroughStep = 0;
+var _walkthroughActive = false;
+
+function needsWalkthrough() {
+  var ts = getTrialState();
+  return !ts['walkthrough_done'];
+}
+
+function markWalkthroughDone() {
+  var ts = getTrialState();
+  ts['walkthrough_done'] = true;
+  saveTrialState(ts);
+}
+
+function launchWalkthrough() {
+  if (!needsWalkthrough()) return;
+  _walkthroughStep = 0;
+  _walkthroughActive = true;
+  renderWalkthroughStep();
+}
+
+function renderWalkthroughStep() {
+  // Remove any existing walkthrough UI
+  var old = document.getElementById('walkthrough-overlay');
+  if (old) old.remove();
+  var oldSpot = document.getElementById('walkthrough-spotlight');
+  if (oldSpot) oldSpot.remove();
+  var oldTooltip = document.getElementById('walkthrough-tooltip');
+  if (oldTooltip) oldTooltip.remove();
+
+  var step = WALKTHROUGH_STEPS[_walkthroughStep];
+  if (!step) { endWalkthrough(); return; }
+
+  var total = WALKTHROUGH_STEPS.length;
+  var isCenter = step.position === 'center';
+
+  // ── Dim overlay ────────────────────────────────────────────────────
+  var overlay = document.createElement('div');
+  overlay.id = 'walkthrough-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,' + (isCenter ? '0.75' : '0.6') + ');z-index:4000;pointer-events:' + (isCenter ? 'all' : 'none') + ';';
+  document.body.appendChild(overlay);
+
+  // ── Target highlight ───────────────────────────────────────────────
+  var targetEl = null;
+  if (step.target && step.target.startsWith("nav-item for '")) {
+    var viewId = step.target.match(/'([^']+)'/)[1];
+    // Find the nav item that navigates to this view
+    var navItems = document.querySelectorAll('#sidebar .nav-item');
+    navItems.forEach(function(ni) {
+      if (ni.getAttribute('onclick') && ni.getAttribute('onclick').indexOf("'" + viewId + "'") >= 0) {
+        targetEl = ni;
+      }
+    });
+  } else if (step.target) {
+    targetEl = document.querySelector(step.target);
+  }
+
+  var spotRect = null;
+  if (targetEl && !isCenter) {
+    var rect = targetEl.getBoundingClientRect();
+    var pad = 6;
+    var spot = document.createElement('div');
+    spot.id = 'walkthrough-spotlight';
+    spot.style.cssText = 'position:fixed;z-index:4001;pointer-events:none;' +
+      'top:' + (rect.top - pad) + 'px;left:' + (rect.left - pad) + 'px;' +
+      'width:' + (rect.width + pad*2) + 'px;height:' + (rect.height + pad*2) + 'px;' +
+      'border:2px solid var(--accent);border-radius:4px;' +
+      'box-shadow:0 0 0 4px rgba(0,212,255,0.15),0 0 20px rgba(0,212,255,0.2);' +
+      'animation:walkthroughPulse 1.5s ease-in-out infinite;';
+    document.body.appendChild(spot);
+    spotRect = rect;
+  }
+
+  // ── Tooltip card ───────────────────────────────────────────────────
+  var tooltip = document.createElement('div');
+  tooltip.id = 'walkthrough-tooltip';
+  tooltip.style.cssText = 'position:fixed;z-index:4002;background:var(--bg-card);border:1px solid var(--accent);border-radius:4px;padding:20px;width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+
+  // Position tooltip
+  if (isCenter) {
+    tooltip.style.top = '50%';
+    tooltip.style.left = '50%';
+    tooltip.style.transform = 'translate(-50%,-50%)';
+  } else if (spotRect) {
+    var leftPos = spotRect.right + 18;
+    var topPos  = spotRect.top;
+    // Keep within viewport
+    if (leftPos + 340 > window.innerWidth - 16) leftPos = spotRect.left - 340 - 18;
+    if (topPos + 260 > window.innerHeight - 16) topPos = window.innerHeight - 260 - 16;
+    if (topPos < 8) topPos = 8;
+    tooltip.style.top  = topPos + 'px';
+    tooltip.style.left = leftPos + 'px';
+  } else {
+    tooltip.style.top = '50%';
+    tooltip.style.left = '50%';
+    tooltip.style.transform = 'translate(-50%,-50%)';
+  }
+
+  // Step counter
+  var counter = document.createElement('div');
+  counter.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;';
+  counter.innerHTML = '<span>Platform Tour</span><span style="color:var(--text-dim);">' + (_walkthroughStep + 1) + ' / ' + total + '</span>';
+  tooltip.appendChild(counter);
+
+  // Progress bar
+  var progBar = document.createElement('div');
+  progBar.style.cssText = 'height:2px;background:var(--border);border-radius:1px;margin-bottom:14px;overflow:hidden;';
+  var progFill = document.createElement('div');
+  progFill.style.cssText = 'height:100%;background:var(--accent);border-radius:1px;width:' + ((_walkthroughStep / (total-1)) * 100) + '%;transition:width 0.3s;';
+  progBar.appendChild(progFill);
+  tooltip.appendChild(progBar);
+
+  // Title
+  var titleEl = document.createElement('div');
+  titleEl.style.cssText = 'font-weight:700;color:var(--text-primary);font-size:14px;margin-bottom:8px;';
+  titleEl.textContent = step.title;
+  tooltip.appendChild(titleEl);
+
+  // Body
+  var bodyEl = document.createElement('div');
+  bodyEl.style.cssText = 'font-size:12px;color:var(--text-secondary);line-height:1.75;margin-bottom:16px;';
+  bodyEl.textContent = step.body;
+  tooltip.appendChild(bodyEl);
+
+  // Button row
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+  // Skip button (first step only shows "Skip Tour")
+  if (_walkthroughStep === 0) {
+    var skipBtn = document.createElement('button');
+    skipBtn.style.cssText = 'background:transparent;border:none;font-family:var(--font-mono);font-size:10px;color:var(--text-dim);cursor:pointer;padding:0;text-decoration:underline;';
+    skipBtn.textContent = 'Skip Tour';
+    skipBtn.onclick = function() { endWalkthrough(); };
+    btnRow.appendChild(skipBtn);
+  }
+
+  var spacer = document.createElement('div'); spacer.style.flex = '1';
+  btnRow.appendChild(spacer);
+
+  // Back button (not on first step)
+  if (_walkthroughStep > 0) {
+    var backBtn = document.createElement('button');
+    backBtn.style.cssText = 'background:transparent;border:1px solid var(--border);border-radius:3px;padding:7px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);cursor:pointer;';
+    backBtn.textContent = '\u2190 Back';
+    backBtn.onclick = function() { _walkthroughStep--; renderWalkthroughStep(); };
+    btnRow.appendChild(backBtn);
+  }
+
+  // Next / Done button
+  var nextBtn = document.createElement('button');
+  nextBtn.style.cssText = 'background:var(--accent-glow);border:1px solid var(--accent);border-radius:3px;padding:7px 16px;font-family:var(--font-mono);font-size:11px;color:var(--accent);cursor:pointer;font-weight:700;';
+  nextBtn.textContent = step.isLast ? '\u2713 Start Working Alerts' : 'Next \u2192';
+  nextBtn.onclick = function() {
+    if (step.isLast) { endWalkthrough(); return; }
+    _walkthroughStep++;
+    renderWalkthroughStep();
+  };
+  btnRow.appendChild(nextBtn);
+  tooltip.appendChild(btnRow);
+
+  document.body.appendChild(tooltip);
+
+  // Make overlay click advance (except center steps where overlay blocks)
+  if (!isCenter) {
+    overlay.style.pointerEvents = 'none';
+  }
+}
+
+function endWalkthrough() {
+  _walkthroughActive = false;
+  markWalkthroughDone();
+  ['walkthrough-overlay','walkthrough-spotlight','walkthrough-tooltip'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.remove();
+  });
 }
 const USER_PROFILES = {
   'm.johnson@acmecorp.com': {
@@ -10870,7 +12574,7 @@ tags:
     fp_rates: [{ value: '~20%', label: 'Personal upload alone' }, { value: '~5%', label: 'With PII detection' }],
     fp_sources: `Personal cloud uploads FP from: employees moving personal files, working on personal devices. FP rate drops significantly when DLP confirms PII content. The resignation context is what converts this from a moderate-confidence to a high-confidence TP.`,
     inv_steps: ['Do NOT alert r.patel: preserve investigation integrity','Pull DLP content inspection: what specific files were flagged? What PII types were detected?','Review r.patel\'s file access history for 30 days: what data has been accessed recently?','Check all exfiltration channels: email forwarding rules, other cloud storage, USB activity, printing','Coordinate with HR to confirm resignation timeline and last day','Engage Legal immediately: SSN exposure may trigger state breach notification obligations','Preserve evidence chain: export all relevant logs before the account is disabled'],
-    enrichment_tools: `<strong>DLP:</strong> Zscaler/Netskope content inspection reports, full file access audit<br><strong>Legal reference:</strong> Check your state breach notification law: SSN exposure is frequently a trigger<br><strong>OSINT on employee:</strong> Per <em>OSINT Handbook</em>: LinkedIn (has profile been updated? "Open to work" signal?), job board presence: this context helps establish intent<br><strong>Insider Risk:</strong> Microsoft Purview Insider Risk Management, Securonix, Forcepoint`,
+    enrichment_tools: `<strong>DLP:</strong> Zscaler/Netskope content inspection reports, full file access audit<br><strong>Legal reference:</strong> Check your state breach notification law: SSN exposure is frequently a trigger<br><strong>OSINT on employee:</strong> LinkedIn (has profile been updated? "Open to work" signal?), job board presence: this context helps establish intent<br><strong>Insider Risk:</strong> Microsoft Purview Insider Risk Management, Securonix, Forcepoint`,
     rule_type: 'DLP Correlation Rule',
     detection_rule: `// DLP + HR system correlation (pseudo-logic)
 IF (
@@ -10970,7 +12674,7 @@ level: high`,
     fp_rates: [{ value: '~2%', label: 'Known C2 domain FP rate' }, { value: 'LOW', label: 'Risk of FP dismissal' }],
     fp_sources: `TI-matched C2 domains have very low FP rates from reputable sources. Possible benign: (1) Domain recently re-registered for legitimate use (rare), (2) Authorized red team infrastructure, (3) Miscategorized domain in TI feed. Always check TI source confidence rating before dismissing.`,
     inv_steps: ['Pull ALL EDR telemetry from SALES-WKS-023 for 2 hours before the DNS query: what process executed?','Check parent process chain of whatever generated the query to cdn-update[.]biz','Search your DNS logs: have any other hosts queried cdn-update[.]biz?','Check Cobalt Strike beacon characteristics: submit domain to Shodan (JARM fingerprint search)','Look for persistence indicators: new scheduled tasks (Event 4698), new services (Event 7045), registry Run keys','Review emails and web browsing on SALES-WKS-023 in the past 24 hours: identify initial access vector','Isolate the workstation: assume the payload is staged or actively executing'],
-    enrichment_tools: `<strong>C2 Intelligence:</strong> Shodan (search Cobalt Strike JARM fingerprints: "ssl.jarm:07d14d16d21d21d00042d41d00041d..."), GreyNoise, URLhaus<br><strong>TI Platforms:</strong> MISP, OpenCTI, VirusTotal Graph (maps related C2 infrastructure)<br><strong>Per OSINT Handbook:</strong> "Use passive DNS to map C2 infrastructure: attackers often reuse IPs across multiple domains": check SecurityTrails, DNSDB<br><strong>JA3/JA3S:</strong> TLS fingerprinting of the connection: Cobalt Strike has well-documented JA3 signatures`,
+    enrichment_tools: `<strong>C2 Intelligence:</strong> Shodan (search Cobalt Strike JARM fingerprints: "ssl.jarm:07d14d16d21d21d00042d41d00041d..."), GreyNoise, URLhaus<br><strong>TI Platforms:</strong> MISP, OpenCTI, VirusTotal Graph (maps related C2 infrastructure)<br>Use passive DNS to map C2 infrastructure: attackers often reuse IPs across multiple domains. check SecurityTrails, DNSDB<br><strong>JA3/JA3S:</strong> TLS fingerprinting of the connection: Cobalt Strike has well-documented JA3 signatures`,
     rule_type: 'SPL + Threat Intel Integration',
     detection_rule: `index=dns
 | lookup threat_intel_feed domain AS query
@@ -11094,7 +12798,7 @@ tags:
     fp_rates: [{ value: '~5%', label: 'Periodic connection FP' }, { value: '~1%', label: 'With overnight + jitter filter' }],
     fp_sources: `Periodic connections benignly from: backup software, monitoring agents, update checkers, cloud sync (Dropbox, OneDrive). Differentiators: (1) legitimate tools have known destination IPs on your allowlist; (2) legitimate tools have variable payload sizes; (3) overnight-only activity (no daytime connections) is unusual for most legitimate services.`,
     inv_steps: ['Pull 30 days of NetFlow for LEGAL-WKS-031: when did the beaconing start?','Identify the process generating port 443 connections to 91.108.4.222 via EDR process-to-network correlation','Submit 91.108.4.222 to Shodan: check for Cobalt Strike JARM fingerprint','Pull SSL certificate for connections to this IP: is it self-signed? What CN/SAN does it use?','Analyze the 847-855 byte payload variance: consistent size = encrypted keep-alive or small command exchange','Check all downloads to LEGAL-WKS-031 in the past 30 days: staging artifacts or dropper remnants?','Interview a.morrison: any unusual emails, file downloads, or anomalous browser behavior recently?'],
-    enrichment_tools: `<strong>C2 Fingerprinting:</strong> Shodan JARM search, SecurityTrails passive DNS: map all domains resolving to 91.108.4.222<br><strong>Per DFIR book:</strong> RITA (Real Intelligence Threat Analytics) automates beacon detection from NetFlow: if deployed, pull RITA analysis for this workstation<br><strong>Per OSINT Handbook:</strong> Use passive DNS to identify all domains hosted on this IP: C2 operators often run multiple campaigns on the same infrastructure<br><strong>JA3/JA3S:</strong> TLS fingerprinting: Cobalt Strike has well-known JA3 signatures`,
+    enrichment_tools: `<strong>C2 Fingerprinting:</strong> Shodan JARM search, SecurityTrails passive DNS: map all domains resolving to 91.108.4.222<br>RITA (Real Intelligence Threat Analytics) automates beacon detection from NetFlow: if deployed, pull RITA analysis for this workstation<br>Use passive DNS to identify all domains hosted on this IP: C2 operators often run multiple campaigns on the same infrastructure<br><strong>JA3/JA3S:</strong> TLS fingerprinting: Cobalt Strike has well-known JA3 signatures`,
     rule_type: 'RITA / Statistical Detection',
     detection_rule: `# RITA beacon detection (conceptual)
 # RITA automates this across all NetFlow
@@ -11193,7 +12897,7 @@ tags:
     fp_rates: [{ value: '~10%', label: 'UEBA spike alone' }, { value: '~3%', label: 'With scope + volume combo' }],
     fp_sources: `UEBA alerts FP from: legitimate project work requiring broad access, newly assigned projects, system migrations. However: 84x normal volume (not 2-3x, but 84x) with M&A document access for an IT admin is not consistent with any legitimate work pattern.`,
     inv_steps: ['Preserve all database query logs immediately: these are your evidence for any legal action','Escalate to Insider Risk team and Legal concurrently: do not investigate solo','Do NOT access the employee\'s workstation, email, or files in a way that alerts them','Pull the CRM query details: what 89,000 records were exported? Customer PII? Revenue? Pricing data?','Check all exfiltration channels for past 30 days: email, USB, cloud uploads, printing, screenshot tools','Coordinate with HR to understand resignation timeline and circumstances (what triggered it?)','Legal assessment: are the copied records trade secrets? Competitive intelligence? IP theft?'],
-    enrichment_tools: `<strong>UEBA:</strong> Microsoft Sentinel UEBA, Securonix, Splunk UBA: pull the full behavioral timeline and peer comparison<br><strong>Database Audit:</strong> Pull the exact SQL queries from the CRM: were they using legitimate reports or raw SELECT queries on the full table?<br><strong>HR Integration:</strong> Cross-reference with HR system: manager departure, PIP status, compensation disputes, recent performance reviews<br><strong>Per OSINT Handbook:</strong> Check LinkedIn activity: profile recently updated? "Open to work" signal? Active on job boards?`,
+    enrichment_tools: `<strong>UEBA:</strong> Microsoft Sentinel UEBA, Securonix, Splunk UBA: pull the full behavioral timeline and peer comparison<br><strong>Database Audit:</strong> Pull the exact SQL queries from the CRM: were they using legitimate reports or raw SELECT queries on the full table?<br><strong>HR Integration:</strong> Cross-reference with HR system: manager departure, PIP status, compensation disputes, recent performance reviews<br>Check LinkedIn activity: profile recently updated? "Open to work" signal? Active on job boards?`,
     rule_type: 'UEBA + DLP Correlation Rule',
     detection_rule: `// Insider Risk Correlation (pseudo-logic)
 WHEN (
@@ -11223,11 +12927,11 @@ THEN alert(P1, team='insider_risk,legal',
   },
   'b007': {
     verdict: 'TP',
-    verdict_explanation: `<strong>True Positive: confirmed data exfiltration via DNS tunneling.</strong> Per <em>DFIR Supplementary Materials</em>: DNS tunneling uses DNS protocol as a covert channel by encoding data in subdomain labels. The decoded sample ("JohnDoe1990.resume.psf") is consistent with personal file data being exfiltrated. The 14,847 queries over 9 hours + hex-encoded subdomains + upward-only traffic (many queries, few responses) = definitively DNS tunnel.`,
+    verdict_explanation: `<strong>True Positive: confirmed data exfiltration via DNS tunneling.</strong> DNS tunneling uses DNS protocol as a covert channel by encoding data in subdomain labels. The decoded sample ("JohnDoe1990.resume.psf") is consistent with personal file data being exfiltrated. The 14,847 queries over 9 hours + hex-encoded subdomains + upward-only traffic (many queries, few responses) = definitively DNS tunnel.`,
     fp_rates: [{ value: '~3%', label: 'High DNS volume FP' }, { value: '~0%', label: 'With encoding pattern' }],
     fp_sources: `High DNS volume benignly from: DNS-over-HTTPS tools, misconfigured DNS clients with short TTLs, CDN content. Differentiators: 89-character average subdomain length with hex-encoded content and query-heavy/response-light pattern has essentially no legitimate explanation.`,
     inv_steps: ['Block data-sync-cdn[.]com at DNS level immediately: stop active exfiltration','Isolate OPS-WKS-055 from the network','Estimate total exfil volume: 14,847 queries × ~60 bytes data per query ≈ ~870KB of exfiltrated data','Decode additional subdomain samples using CyberChef: From Hex → From Base64: identify data types','Pull 30 days of DNS history for OPS-WKS-055: when did this start? Total volume?','Identify the process generating DNS queries: EDR process-to-DNS correlation','Submit data-sync-cdn[.]com to passive DNS: what IP? What other domains use that IP?'],
-    enrichment_tools: `<strong>DNS Forensics:</strong> PassiveDNS, SecurityTrails, DNSDB: map the full infrastructure<br><strong>Exfil Estimation:</strong> DNS query can carry ~60-120 bytes in subdomains: multiply by query count for rough volume estimate<br><strong>Per DFIR book:</strong> Zeek (zeek.org) and RITA are specifically referenced for DNS analysis: if deployed, pull zeek dns.log for this workstation<br><strong>Decoding:</strong> CyberChef with From Hex → From Base64 to decode additional subdomain samples and identify data types`,
+    enrichment_tools: `<strong>DNS Forensics:</strong> PassiveDNS, SecurityTrails, DNSDB: map the full infrastructure<br><strong>Exfil Estimation:</strong> DNS query can carry ~60-120 bytes in subdomains: multiply by query count for rough volume estimate<br>Zeek (zeek.org) and RITA are useful for DNS analysis: if deployed, pull zeek dns.log for this workstation<br><strong>Decoding:</strong> CyberChef with From Hex → From Base64 to decode additional subdomain samples and identify data types`,
     rule_type: 'Zeek / DNS Statistical Detection',
     detection_rule: `# DNS Tunneling Detection (Zeek + statistical)
 SELECT uid, query,
@@ -14383,7 +16087,7 @@ var AUTOMATION_EXERCISES = [
     scenario: 'A SOC receives 200+ alerts per day. Each alert contains a source IP, a destination domain, and a file hash. Manually checking each against VirusTotal, AbuseIPDB, and Shodan takes 5-8 minutes per alert. Write a Python automation script that enriches a batch of alerts from a JSON feed.',
     concept: 'IOC Enrichment Automation',
     pseudocode: '// INPUT: alerts.json -- list of alert objects with src_ip, dst_domain, file_hash\n// OUTPUT: enriched_alerts.json -- each alert with threat intel added\n\n1. Load alerts from JSON file\n2. For each alert:\n   a. Check src_ip against AbuseIPDB API\n      - Endpoint: GET /api/v2/check?ipAddress={ip}\n      - Extract: abuseConfidenceScore, totalReports, usageType\n   b. Check dst_domain against VirusTotal\n      - Endpoint: GET /vtapi/v3/domains/{domain}\n      - Extract: last_analysis_stats (malicious, suspicious count)\n   c. Check file_hash against VirusTotal\n      - Endpoint: GET /vtapi/v3/files/{hash}\n      - Extract: meaningful_name, last_analysis_stats\n   d. Set alert severity based on enrichment:\n      - IP abuse score > 80 OR VT malicious > 5 = CRITICAL\n      - IP abuse score > 50 OR VT suspicious > 3 = HIGH\n      - Otherwise = review original severity\n3. Write enriched alerts to output JSON\n4. Generate summary: total processed, critical count, high count',
-    ref_answer: '#!/usr/bin/env python3\n"""\nSOC IOC Enrichment Automation\nInspired by: Security Automation with Python (Corey Charles Sr., Packt 2025)\n"""\nimport json, time, requests\nfrom datetime import datetime\n\n# API Keys (use environment variables in production)\nVT_API_KEY = "your_vt_key_here"\nABUSE_API_KEY = "your_abuse_key_here"\n\ndef check_ip_abuseipdb(ip: str) -> dict:\n    """Query AbuseIPDB for IP reputation."""\n    url = "https://api.abuseipdb.com/api/v2/check"\n    headers = {"Key": ABUSE_API_KEY, "Accept": "application/json"}\n    params = {"ipAddress": ip, "maxAgeInDays": 90}\n    try:\n        r = requests.get(url, headers=headers, params=params, timeout=10)\n        data = r.json().get("data", {})\n        return {\n            "abuse_score": data.get("abuseConfidenceScore", 0),\n            "total_reports": data.get("totalReports", 0),\n            "usage_type": data.get("usageType", "unknown"),\n            "country": data.get("countryCode", "??"),\n        }\n    except Exception as e:\n        return {"error": str(e)}\n\ndef check_domain_vt(domain: str) -> dict:\n    """Query VirusTotal for domain reputation."""\n    url = f"https://www.virustotal.com/api/v3/domains/{domain}"\n    headers = {"x-apikey": VT_API_KEY}\n    try:\n        r = requests.get(url, headers=headers, timeout=10)\n        stats = r.json().get("data",{}).get("attributes",{}).get("last_analysis_stats",{})\n        return {\n            "malicious": stats.get("malicious", 0),\n            "suspicious": stats.get("suspicious", 0),\n            "harmless": stats.get("harmless", 0),\n        }\n    except Exception as e:\n        return {"error": str(e)}\n\ndef check_hash_vt(file_hash: str) -> dict:\n    """Query VirusTotal for file hash reputation."""\n    url = f"https://www.virustotal.com/api/v3/files/{file_hash}"\n    headers = {"x-apikey": VT_API_KEY}\n    try:\n        r = requests.get(url, headers=headers, timeout=10)\n        attrs = r.json().get("data",{}).get("attributes",{})\n        stats = attrs.get("last_analysis_stats", {})\n        return {\n            "name": attrs.get("meaningful_name", "unknown"),\n            "malicious": stats.get("malicious", 0),\n            "type": attrs.get("type_description", "unknown"),\n        }\n    except Exception as e:\n        return {"error": str(e)}\n\ndef score_alert(alert: dict, enrichment: dict) -> str:\n    """Determine severity based on enrichment results."""\n    ip_score   = enrichment.get("ip", {}).get("abuse_score", 0)\n    vt_mal     = enrichment.get("domain", {}).get("malicious", 0)\n    hash_mal   = enrichment.get("hash", {}).get("malicious", 0)\n    if ip_score > 80 or vt_mal > 5 or hash_mal > 10:\n        return "CRITICAL"\n    elif ip_score > 40 or vt_mal > 2 or hash_mal > 3:\n        return "HIGH"\n    return alert.get("original_severity", "MEDIUM")\n\ndef enrich_alerts(input_file: str, output_file: str):\n    with open(input_file) as f:\n        alerts = json.load(f)\n\n    enriched, critical, high = [], 0, 0\n    for alert in alerts:\n        print(f"Enriching: {alert.get(\'alert_id\', \'?\')}...")\n        enr = {\n            "ip":     check_ip_abuseipdb(alert.get("src_ip", "")),\n            "domain": check_domain_vt(alert.get("dst_domain", "")),\n            "hash":   check_hash_vt(alert.get("file_hash", "")) if alert.get("file_hash") else {},\n        }\n        severity = score_alert(alert, enr)\n        alert["enrichment"] = enr\n        alert["enriched_severity"] = severity\n        alert["enriched_at"] = datetime.utcnow().isoformat() + "Z"\n        enriched.append(alert)\n        if severity == "CRITICAL": critical += 1\n        elif severity == "HIGH": high += 1\n        time.sleep(0.5)  # Rate limit: VT free tier = 4 req/min\n\n    with open(output_file, "w") as f:\n        json.dump(enriched, f, indent=2)\n\n    print(f"\\nComplete: {len(enriched)} alerts | CRITICAL: {critical} | HIGH: {high}")\n\nif __name__ == "__main__":\n    enrich_alerts("alerts.json", "enriched_alerts.json")',
+    ref_answer: '#!/usr/bin/env python3\n"""\nSOC IOC Enrichment Automation\n"""\nimport json, time, requests\nfrom datetime import datetime\n\n# API Keys (use environment variables in production)\nVT_API_KEY = "your_vt_key_here"\nABUSE_API_KEY = "your_abuse_key_here"\n\ndef check_ip_abuseipdb(ip: str) -> dict:\n    """Query AbuseIPDB for IP reputation."""\n    url = "https://api.abuseipdb.com/api/v2/check"\n    headers = {"Key": ABUSE_API_KEY, "Accept": "application/json"}\n    params = {"ipAddress": ip, "maxAgeInDays": 90}\n    try:\n        r = requests.get(url, headers=headers, params=params, timeout=10)\n        data = r.json().get("data", {})\n        return {\n            "abuse_score": data.get("abuseConfidenceScore", 0),\n            "total_reports": data.get("totalReports", 0),\n            "usage_type": data.get("usageType", "unknown"),\n            "country": data.get("countryCode", "??"),\n        }\n    except Exception as e:\n        return {"error": str(e)}\n\ndef check_domain_vt(domain: str) -> dict:\n    """Query VirusTotal for domain reputation."""\n    url = f"https://www.virustotal.com/api/v3/domains/{domain}"\n    headers = {"x-apikey": VT_API_KEY}\n    try:\n        r = requests.get(url, headers=headers, timeout=10)\n        stats = r.json().get("data",{}).get("attributes",{}).get("last_analysis_stats",{})\n        return {\n            "malicious": stats.get("malicious", 0),\n            "suspicious": stats.get("suspicious", 0),\n            "harmless": stats.get("harmless", 0),\n        }\n    except Exception as e:\n        return {"error": str(e)}\n\ndef check_hash_vt(file_hash: str) -> dict:\n    """Query VirusTotal for file hash reputation."""\n    url = f"https://www.virustotal.com/api/v3/files/{file_hash}"\n    headers = {"x-apikey": VT_API_KEY}\n    try:\n        r = requests.get(url, headers=headers, timeout=10)\n        attrs = r.json().get("data",{}).get("attributes",{})\n        stats = attrs.get("last_analysis_stats", {})\n        return {\n            "name": attrs.get("meaningful_name", "unknown"),\n            "malicious": stats.get("malicious", 0),\n            "type": attrs.get("type_description", "unknown"),\n        }\n    except Exception as e:\n        return {"error": str(e)}\n\ndef score_alert(alert: dict, enrichment: dict) -> str:\n    """Determine severity based on enrichment results."""\n    ip_score   = enrichment.get("ip", {}).get("abuse_score", 0)\n    vt_mal     = enrichment.get("domain", {}).get("malicious", 0)\n    hash_mal   = enrichment.get("hash", {}).get("malicious", 0)\n    if ip_score > 80 or vt_mal > 5 or hash_mal > 10:\n        return "CRITICAL"\n    elif ip_score > 40 or vt_mal > 2 or hash_mal > 3:\n        return "HIGH"\n    return alert.get("original_severity", "MEDIUM")\n\ndef enrich_alerts(input_file: str, output_file: str):\n    with open(input_file) as f:\n        alerts = json.load(f)\n\n    enriched, critical, high = [], 0, 0\n    for alert in alerts:\n        print(f"Enriching: {alert.get(\'alert_id\', \'?\')}...")\n        enr = {\n            "ip":     check_ip_abuseipdb(alert.get("src_ip", "")),\n            "domain": check_domain_vt(alert.get("dst_domain", "")),\n            "hash":   check_hash_vt(alert.get("file_hash", "")) if alert.get("file_hash") else {},\n        }\n        severity = score_alert(alert, enr)\n        alert["enrichment"] = enr\n        alert["enriched_severity"] = severity\n        alert["enriched_at"] = datetime.utcnow().isoformat() + "Z"\n        enriched.append(alert)\n        if severity == "CRITICAL": critical += 1\n        elif severity == "HIGH": high += 1\n        time.sleep(0.5)  # Rate limit: VT free tier = 4 req/min\n\n    with open(output_file, "w") as f:\n        json.dump(enriched, f, indent=2)\n\n    print(f"\\nComplete: {len(enriched)} alerts | CRITICAL: {critical} | HIGH: {high}")\n\nif __name__ == "__main__":\n    enrich_alerts("alerts.json", "enriched_alerts.json")',
     key_concepts: [
       'Rate limiting: Free threat intel APIs throttle to 4-15 requests/minute. Always add time.sleep() between calls.',
       'Error handling: Network calls fail. Every API call needs try/except or your automation breaks on the first bad response.',
@@ -14398,13 +16102,13 @@ var AUTOMATION_EXERCISES = [
     scenario: 'During incident response, analysts manually correlate timestamps from four log sources (EDR, SIEM, DNS, Firewall) to build a timeline. This takes 2-3 hours and is error-prone. Automate the ingestion, normalization, and timeline output.',
     concept: 'Log Normalization and Timeline Correlation',
     pseudocode: '// INPUT: Four log files (edr.json, siem.csv, dns.log, firewall.log)\n// OUTPUT: incident_timeline.html -- chronological event list\n\n1. Define a normalized event schema:\n   { timestamp, source, type, src_ip, dst_ip, user, process, description }\n\n2. Parse each log source into normalized events:\n   - EDR (JSON): extract timestamp, ProcessName, CommandLine, User\n   - SIEM (CSV): parse timestamp column, EventID, AccountName, Computer\n   - DNS (syslog format): parse query name, client IP, response\n   - Firewall (custom format): parse src/dst/port/action\n\n3. Merge all events into a single list\n4. Sort by timestamp (UTC, handle timezone offsets)\n5. Filter to a time window (e.g., T-1h to T+4h from first suspicious event)\n6. Output as:\n   - HTML timeline with color coding by log source\n   - JSON for further processing\n   - Markdown for incident report embedding',
-    ref_answer: '#!/usr/bin/env python3\n"""\nIncident Timeline Generator\nInspired by: Security Automation with Python, Chapter 7 -- IR Automation\n"""\nimport json, csv, re\nfrom datetime import datetime, timezone\nfrom pathlib import Path\n\n# ── Normalized Event Schema ─────────────────────────────────\nclass Event:\n    def __init__(self, ts, source, etype, description, src_ip="", user="", process=""):\n        self.timestamp   = ts      # datetime (UTC)\n        self.source      = source  # "EDR" | "SIEM" | "DNS" | "Firewall"\n        self.event_type  = etype   # e.g., "Process Execution", "DNS Query"\n        self.description = description\n        self.src_ip      = src_ip\n        self.user        = user\n        self.process     = process\n\n    def to_dict(self):\n        return {\n            "timestamp":   self.timestamp.isoformat(),\n            "source":      self.source,\n            "event_type":  self.event_type,\n            "description": self.description,\n            "src_ip":      self.src_ip,\n            "user":        self.user,\n            "process":     self.process,\n        }\n\n# ── Parsers ──────────────────────────────────────────────────\ndef parse_edr_json(path: str) -> list:\n    """Parse CrowdStrike/SentinelOne style EDR JSON export."""\n    events = []\n    with open(path) as f:\n        for entry in json.load(f):\n            ts = datetime.fromisoformat(entry["timestamp"].replace("Z","")).replace(tzinfo=timezone.utc)\n            desc = f"{entry.get(\'ProcessName\',\'?\')} | {entry.get(\'CommandLine\',\'\')}"\n            events.append(Event(\n                ts       = ts,\n                source   = "EDR",\n                etype    = entry.get("EventType", "Process"),\n                description = desc,\n                src_ip   = entry.get("LocalIP", ""),\n                user     = entry.get("UserName", ""),\n                process  = entry.get("ProcessName", ""),\n            ))\n    return events\n\ndef parse_siem_csv(path: str) -> list:\n    """Parse generic SIEM CSV export."""\n    events = []\n    with open(path, newline="") as f:\n        for row in csv.DictReader(f):\n            try:\n                ts = datetime.fromisoformat(row["TimeGenerated"]).replace(tzinfo=timezone.utc)\n            except:\n                continue\n            events.append(Event(\n                ts          = ts,\n                source      = "SIEM",\n                etype       = f"EventID {row.get(\'EventID\',\'?\')}",\n                description = row.get("Message", "")[:200],\n                src_ip      = row.get("IpAddress", ""),\n                user        = row.get("AccountName", ""),\n            ))\n    return events\n\ndef parse_dns_syslog(path: str) -> list:\n    """Parse standard DNS syslog format."""\n    events, pattern = [], re.compile(\n        r\'(?P<ts>\\S+ \\S+).*client (?P<ip>[\\d.]+)#.*query: (?P<query>\\S+) IN\'\n    )\n    with open(path) as f:\n        for line in f:\n            m = pattern.search(line)\n            if not m: continue\n            try:\n                ts = datetime.strptime(m.group("ts"), "%b %d %H:%M:%S").replace(\n                    year=2024, tzinfo=timezone.utc)\n            except:\n                continue\n            events.append(Event(\n                ts=ts, source="DNS", etype="DNS Query",\n                description=f"Query: {m.group(\'query\')}",\n                src_ip=m.group("ip"),\n            ))\n    return events\n\n# ── Timeline Builder ─────────────────────────────────────────\ndef build_timeline(events: list, output_html: str):\n    events.sort(key=lambda e: e.timestamp)\n    source_colors = {\n        "EDR":      "#ff9900",\n        "SIEM":     "#00d4ff",\n        "DNS":      "#7aadcc",\n        "Firewall": "#ff4444",\n    }\n    rows = "".join(\n        f\'<tr style="border-bottom:1px solid #1e3a5f;">\'\n        f\'<td style="color:#888;font-family:monospace;font-size:11px;padding:6px 10px;white-space:nowrap;">{e.timestamp.strftime("%H:%M:%S.%f")[:-3]}</td>\'\n        f\'<td style="padding:6px 10px;"><span style="background:rgba(255,255,255,0.05);border:1px solid #1e3a5f;border-radius:2px;padding:1px 6px;font-family:monospace;font-size:9px;color:{source_colors.get(e.source,\'#fff\')};">{e.source}</span></td>\'\n        f\'<td style="color:#c8d8e8;font-size:12px;padding:6px 10px;">{e.event_type}</td>\'\n        f\'<td style="color:#8ab0c8;font-size:11px;padding:6px 10px;">{e.description[:120]}</td>\'\n        f\'<td style="font-family:monospace;font-size:10px;color:#666;padding:6px 10px;">{e.src_ip}</td>\'\n        f\'<td style="font-family:monospace;font-size:10px;color:#888;padding:6px 10px;">{e.user}</td>\'\n        f\'</tr>\'\n        for e in events\n    )\n    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Incident Timeline</title>\n<style>body{{background:#0a0e14;color:#c8d8e8;font-family:sans-serif;margin:20px}}\ntable{{width:100%;border-collapse:collapse;background:#0d1520}}\nth{{background:#0d1a2a;color:#6a9fb5;font-family:monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:2px solid #1e3a5f}}\n</style></head><body>\n<h2 style="font-family:monospace;color:#00d4ff;">Incident Timeline -- {len(events)} events</h2>\n<table><thead><tr><th>TIME</th><th>SOURCE</th><th>TYPE</th><th>DESCRIPTION</th><th>SRC IP</th><th>USER</th></tr></thead>\n<tbody>{rows}</tbody></table></body></html>"""\n    Path(output_html).write_text(html)\n    print(f"Timeline saved: {output_html} ({len(events)} events)")\n\nif __name__ == "__main__":\n    all_events = []\n    all_events += parse_edr_json("edr.json")\n    all_events += parse_siem_csv("siem.csv")\n    all_events += parse_dns_syslog("dns.log")\n    build_timeline(all_events, "incident_timeline.html")',
+    ref_answer: '#!/usr/bin/env python3\n"""\nIncident Timeline Generator\n"""\nimport json, csv, re\nfrom datetime import datetime, timezone\nfrom pathlib import Path\n\n# ── Normalized Event Schema ─────────────────────────────────\nclass Event:\n    def __init__(self, ts, source, etype, description, src_ip="", user="", process=""):\n        self.timestamp   = ts      # datetime (UTC)\n        self.source      = source  # "EDR" | "SIEM" | "DNS" | "Firewall"\n        self.event_type  = etype   # e.g., "Process Execution", "DNS Query"\n        self.description = description\n        self.src_ip      = src_ip\n        self.user        = user\n        self.process     = process\n\n    def to_dict(self):\n        return {\n            "timestamp":   self.timestamp.isoformat(),\n            "source":      self.source,\n            "event_type":  self.event_type,\n            "description": self.description,\n            "src_ip":      self.src_ip,\n            "user":        self.user,\n            "process":     self.process,\n        }\n\n# ── Parsers ──────────────────────────────────────────────────\ndef parse_edr_json(path: str) -> list:\n    """Parse CrowdStrike/SentinelOne style EDR JSON export."""\n    events = []\n    with open(path) as f:\n        for entry in json.load(f):\n            ts = datetime.fromisoformat(entry["timestamp"].replace("Z","")).replace(tzinfo=timezone.utc)\n            desc = f"{entry.get(\'ProcessName\',\'?\')} | {entry.get(\'CommandLine\',\'\')}"\n            events.append(Event(\n                ts       = ts,\n                source   = "EDR",\n                etype    = entry.get("EventType", "Process"),\n                description = desc,\n                src_ip   = entry.get("LocalIP", ""),\n                user     = entry.get("UserName", ""),\n                process  = entry.get("ProcessName", ""),\n            ))\n    return events\n\ndef parse_siem_csv(path: str) -> list:\n    """Parse generic SIEM CSV export."""\n    events = []\n    with open(path, newline="") as f:\n        for row in csv.DictReader(f):\n            try:\n                ts = datetime.fromisoformat(row["TimeGenerated"]).replace(tzinfo=timezone.utc)\n            except:\n                continue\n            events.append(Event(\n                ts          = ts,\n                source      = "SIEM",\n                etype       = f"EventID {row.get(\'EventID\',\'?\')}",\n                description = row.get("Message", "")[:200],\n                src_ip      = row.get("IpAddress", ""),\n                user        = row.get("AccountName", ""),\n            ))\n    return events\n\ndef parse_dns_syslog(path: str) -> list:\n    """Parse standard DNS syslog format."""\n    events, pattern = [], re.compile(\n        r\'(?P<ts>\\S+ \\S+).*client (?P<ip>[\\d.]+)#.*query: (?P<query>\\S+) IN\'\n    )\n    with open(path) as f:\n        for line in f:\n            m = pattern.search(line)\n            if not m: continue\n            try:\n                ts = datetime.strptime(m.group("ts"), "%b %d %H:%M:%S").replace(\n                    year=2024, tzinfo=timezone.utc)\n            except:\n                continue\n            events.append(Event(\n                ts=ts, source="DNS", etype="DNS Query",\n                description=f"Query: {m.group(\'query\')}",\n                src_ip=m.group("ip"),\n            ))\n    return events\n\n# ── Timeline Builder ─────────────────────────────────────────\ndef build_timeline(events: list, output_html: str):\n    events.sort(key=lambda e: e.timestamp)\n    source_colors = {\n        "EDR":      "#ff9900",\n        "SIEM":     "#00d4ff",\n        "DNS":      "#7aadcc",\n        "Firewall": "#ff4444",\n    }\n    rows = "".join(\n        f\'<tr style="border-bottom:1px solid #1e3a5f;">\'\n        f\'<td style="color:#888;font-family:monospace;font-size:11px;padding:6px 10px;white-space:nowrap;">{e.timestamp.strftime("%H:%M:%S.%f")[:-3]}</td>\'\n        f\'<td style="padding:6px 10px;"><span style="background:rgba(255,255,255,0.05);border:1px solid #1e3a5f;border-radius:2px;padding:1px 6px;font-family:monospace;font-size:9px;color:{source_colors.get(e.source,\'#fff\')};">{e.source}</span></td>\'\n        f\'<td style="color:#c8d8e8;font-size:12px;padding:6px 10px;">{e.event_type}</td>\'\n        f\'<td style="color:#8ab0c8;font-size:11px;padding:6px 10px;">{e.description[:120]}</td>\'\n        f\'<td style="font-family:monospace;font-size:10px;color:#666;padding:6px 10px;">{e.src_ip}</td>\'\n        f\'<td style="font-family:monospace;font-size:10px;color:#888;padding:6px 10px;">{e.user}</td>\'\n        f\'</tr>\'\n        for e in events\n    )\n    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Incident Timeline</title>\n<style>body{{background:#0a0e14;color:#c8d8e8;font-family:sans-serif;margin:20px}}\ntable{{width:100%;border-collapse:collapse;background:#0d1520}}\nth{{background:#0d1a2a;color:#6a9fb5;font-family:monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:2px solid #1e3a5f}}\n</style></head><body>\n<h2 style="font-family:monospace;color:#00d4ff;">Incident Timeline -- {len(events)} events</h2>\n<table><thead><tr><th>TIME</th><th>SOURCE</th><th>TYPE</th><th>DESCRIPTION</th><th>SRC IP</th><th>USER</th></tr></thead>\n<tbody>{rows}</tbody></table></body></html>"""\n    Path(output_html).write_text(html)\n    print(f"Timeline saved: {output_html} ({len(events)} events)")\n\nif __name__ == "__main__":\n    all_events = []\n    all_events += parse_edr_json("edr.json")\n    all_events += parse_siem_csv("siem.csv")\n    all_events += parse_dns_syslog("dns.log")\n    build_timeline(all_events, "incident_timeline.html")',
     key_concepts: [
       'Timestamp normalization: Every log source uses a different timestamp format. Always convert to UTC datetime objects before sorting. A timeline with mixed timezones is worse than no timeline.',
       'Schema normalization: Define a common event schema before parsing. Code that tries to handle every source format without a schema becomes unmaintainable.',
       'Generator pattern: For large log files (10M+ lines), use generators instead of loading everything into memory. yield events rather than returning a list.',
       'Idempotent output: Write to a new file on each run. Never modify the source logs.',
-      'From the book: Chapter 7 of Security Automation with Python specifically covers IR automation case studies including automated log analysis -- the timeline approach mirrors case study 4 (telecommunications log analysis).'
+      'Chapter 7 of many IR automation references covers log analysis pipelines.ysis -- the timeline approach mirrors case study 4 (telecommunications log analysis).'
     ]
   },
   {
@@ -14413,13 +16117,13 @@ var AUTOMATION_EXERCISES = [
     scenario: 'Build a simplified SOAR playbook that automatically handles Tier 1 phishing alert triage: extracts IOCs from the email alert, enriches them, makes an auto-close or escalation decision, and sends a summary notification.',
     concept: 'SOAR Playbook Automation',
     pseudocode: '// Trigger: new phishing alert in ticketing system\n// Input: alert JSON from email security gateway\n// Output: ticket updated with verdict + notification sent\n\nPLAYBOOK: phishing_triage\n\nSTEP 1: extract_iocs(alert)\n  - Extract: sender_domain, urls[], file_hashes[], bec_score\n  - Decode: any URL-encoded or base64 strings\n  - Normalize: all domains to lowercase, remove http://\n\nSTEP 2: parallel_enrichment(iocs)\n  - [thread 1] check_domain_reputation(sender_domain)\n  - [thread 2] check_url_reputation(urls)\n  - [thread 3] check_file_hashes(hashes)\n  Merge results\n\nSTEP 3: make_decision(alert, enrichment)\n  IF any_malicious_indicator: return "ESCALATE"\n  ELIF bec_score > 70: return "ESCALATE"\n  ELIF all_clean AND bec_score < 20: return "CLOSE_FP"\n  ELSE: return "ANALYST_REVIEW"\n\nSTEP 4: take_action(decision)\n  IF ESCALATE:\n    - Update ticket severity to HIGH\n    - Assign to Tier 2 queue\n    - Send Slack notification to #soc-escalations\n  IF CLOSE_FP:\n    - Close ticket as False Positive\n    - Add enrichment data to ticket notes\n  IF ANALYST_REVIEW:\n    - Add enrichment data to ticket\n    - Leave in Tier 1 queue',
-    ref_answer: '#!/usr/bin/env python3\n"""\nSimplified SOAR Phishing Triage Playbook\nInspired by: Security Automation with Python, Chapter 7\n             Case study 1: Automating phishing IR for financial institution\n"""\nimport json, concurrent.futures, requests, os\nfrom dataclasses import dataclass, field\nfrom typing import Optional\n\n@dataclass\nclass PhishingAlert:\n    alert_id: str\n    sender_domain: str\n    bec_score: int\n    urls: list = field(default_factory=list)\n    file_hashes: list = field(default_factory=list)\n    enrichment: dict = field(default_factory=dict)\n    decision: Optional[str] = None\n\ndef enrich_domain(domain: str) -> dict:\n    """Check domain against VT and WHOIS age check."""\n    # Simplified -- real implementation uses VT API\n    # Returns: {malicious: int, age_days: int}\n    vt_key = os.environ.get("VT_API_KEY", "")\n    if not vt_key:\n        return {"error": "No VT key configured"}\n    try:\n        r = requests.get(\n            f"https://www.virustotal.com/api/v3/domains/{domain}",\n            headers={"x-apikey": vt_key}, timeout=10\n        )\n        stats = r.json().get("data",{}).get("attributes",{}).get("last_analysis_stats",{})\n        return {"malicious": stats.get("malicious", 0), "suspicious": stats.get("suspicious", 0)}\n    except:\n        return {"error": "enrichment_failed"}\n\ndef enrich_url(url: str) -> dict:\n    """Check URL against VirusTotal."""\n    import base64\n    vt_key = os.environ.get("VT_API_KEY", "")\n    url_id = base64.urlsafe_b64encode(url.encode()).decode().strip("=")\n    try:\n        r = requests.get(\n            f"https://www.virustotal.com/api/v3/urls/{url_id}",\n            headers={"x-apikey": vt_key}, timeout=10\n        )\n        stats = r.json().get("data",{}).get("attributes",{}).get("last_analysis_stats",{})\n        return {"malicious": stats.get("malicious", 0)}\n    except:\n        return {"error": "enrichment_failed"}\n\ndef parallel_enrich(alert: PhishingAlert) -> dict:\n    """Run all enrichment checks in parallel using ThreadPoolExecutor."""\n    enrichment = {}\n    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:\n        futures = {}\n        # Submit all enrichment tasks\n        futures["domain"] = executor.submit(enrich_domain, alert.sender_domain)\n        for i, url in enumerate(alert.urls[:3]):  # Limit to 3 URLs\n            futures[f"url_{i}"] = executor.submit(enrich_url, url)\n        # Collect results\n        for key, future in futures.items():\n            try:\n                enrichment[key] = future.result(timeout=15)\n            except Exception as e:\n                enrichment[key] = {"error": str(e)}\n    return enrichment\n\ndef make_decision(alert: PhishingAlert) -> str:\n    """Triage decision based on enrichment."""\n    domain_malicious = alert.enrichment.get("domain",{}).get("malicious", 0)\n    url_malicious = any(\n        alert.enrichment.get(f"url_{i}", {}).get("malicious", 0) > 0\n        for i in range(len(alert.urls))\n    )\n    if domain_malicious > 3 or url_malicious:\n        return "ESCALATE"\n    if alert.bec_score >= 70:\n        return "ESCALATE"\n    if domain_malicious == 0 and not url_malicious and alert.bec_score < 25:\n        return "CLOSE_FP"\n    return "ANALYST_REVIEW"\n\ndef send_slack_notification(alert: PhishingAlert, webhook_url: str):\n    """Send escalation notification to Slack."""\n    payload = {\n        "text": f":rotating_light: *Phishing Escalation* | Alert {alert.alert_id}",\n        "attachments": [{"color": "danger",\n            "fields": [\n                {"title": "Sender Domain", "value": alert.sender_domain, "short": True},\n                {"title": "BEC Score", "value": str(alert.bec_score), "short": True},\n                {"title": "Decision", "value": alert.decision, "short": True},\n            ]\n        }]\n    }\n    requests.post(webhook_url, json=payload, timeout=5)\n\ndef run_playbook(alert_json: dict) -> dict:\n    """Main playbook entry point."""\n    alert = PhishingAlert(\n        alert_id=alert_json["alert_id"],\n        sender_domain=alert_json["sender_domain"],\n        bec_score=alert_json.get("bec_score", 0),\n        urls=alert_json.get("urls", []),\n        file_hashes=alert_json.get("file_hashes", []),\n    )\n    print(f"[*] Enriching alert {alert.alert_id}...")\n    alert.enrichment = parallel_enrich(alert)\n    alert.decision = make_decision(alert)\n    print(f"[*] Decision: {alert.decision}")\n    if alert.decision == "ESCALATE":\n        webhook = os.environ.get("SLACK_WEBHOOK", "")\n        if webhook:\n            send_slack_notification(alert, webhook)\n    return {\n        "alert_id": alert.alert_id,\n        "decision": alert.decision,\n        "enrichment": alert.enrichment,\n    }',
+    ref_answer: '#!/usr/bin/env python3\n"""\nSimplified SOAR Phishing Triage Playbook\nn"""\nimport json, concurrent.futures, requests, os\nfrom dataclasses import dataclass, field\nfrom typing import Optional\n\n@dataclass\nclass PhishingAlert:\n    alert_id: str\n    sender_domain: str\n    bec_score: int\n    urls: list = field(default_factory=list)\n    file_hashes: list = field(default_factory=list)\n    enrichment: dict = field(default_factory=dict)\n    decision: Optional[str] = None\n\ndef enrich_domain(domain: str) -> dict:\n    """Check domain against VT and WHOIS age check."""\n    # Simplified -- real implementation uses VT API\n    # Returns: {malicious: int, age_days: int}\n    vt_key = os.environ.get("VT_API_KEY", "")\n    if not vt_key:\n        return {"error": "No VT key configured"}\n    try:\n        r = requests.get(\n            f"https://www.virustotal.com/api/v3/domains/{domain}",\n            headers={"x-apikey": vt_key}, timeout=10\n        )\n        stats = r.json().get("data",{}).get("attributes",{}).get("last_analysis_stats",{})\n        return {"malicious": stats.get("malicious", 0), "suspicious": stats.get("suspicious", 0)}\n    except:\n        return {"error": "enrichment_failed"}\n\ndef enrich_url(url: str) -> dict:\n    """Check URL against VirusTotal."""\n    import base64\n    vt_key = os.environ.get("VT_API_KEY", "")\n    url_id = base64.urlsafe_b64encode(url.encode()).decode().strip("=")\n    try:\n        r = requests.get(\n            f"https://www.virustotal.com/api/v3/urls/{url_id}",\n            headers={"x-apikey": vt_key}, timeout=10\n        )\n        stats = r.json().get("data",{}).get("attributes",{}).get("last_analysis_stats",{})\n        return {"malicious": stats.get("malicious", 0)}\n    except:\n        return {"error": "enrichment_failed"}\n\ndef parallel_enrich(alert: PhishingAlert) -> dict:\n    """Run all enrichment checks in parallel using ThreadPoolExecutor."""\n    enrichment = {}\n    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:\n        futures = {}\n        # Submit all enrichment tasks\n        futures["domain"] = executor.submit(enrich_domain, alert.sender_domain)\n        for i, url in enumerate(alert.urls[:3]):  # Limit to 3 URLs\n            futures[f"url_{i}"] = executor.submit(enrich_url, url)\n        # Collect results\n        for key, future in futures.items():\n            try:\n                enrichment[key] = future.result(timeout=15)\n            except Exception as e:\n                enrichment[key] = {"error": str(e)}\n    return enrichment\n\ndef make_decision(alert: PhishingAlert) -> str:\n    """Triage decision based on enrichment."""\n    domain_malicious = alert.enrichment.get("domain",{}).get("malicious", 0)\n    url_malicious = any(\n        alert.enrichment.get(f"url_{i}", {}).get("malicious", 0) > 0\n        for i in range(len(alert.urls))\n    )\n    if domain_malicious > 3 or url_malicious:\n        return "ESCALATE"\n    if alert.bec_score >= 70:\n        return "ESCALATE"\n    if domain_malicious == 0 and not url_malicious and alert.bec_score < 25:\n        return "CLOSE_FP"\n    return "ANALYST_REVIEW"\n\ndef send_slack_notification(alert: PhishingAlert, webhook_url: str):\n    """Send escalation notification to Slack."""\n    payload = {\n        "text": f":rotating_light: *Phishing Escalation* | Alert {alert.alert_id}",\n        "attachments": [{"color": "danger",\n            "fields": [\n                {"title": "Sender Domain", "value": alert.sender_domain, "short": True},\n                {"title": "BEC Score", "value": str(alert.bec_score), "short": True},\n                {"title": "Decision", "value": alert.decision, "short": True},\n            ]\n        }]\n    }\n    requests.post(webhook_url, json=payload, timeout=5)\n\ndef run_playbook(alert_json: dict) -> dict:\n    """Main playbook entry point."""\n    alert = PhishingAlert(\n        alert_id=alert_json["alert_id"],\n        sender_domain=alert_json["sender_domain"],\n        bec_score=alert_json.get("bec_score", 0),\n        urls=alert_json.get("urls", []),\n        file_hashes=alert_json.get("file_hashes", []),\n    )\n    print(f"[*] Enriching alert {alert.alert_id}...")\n    alert.enrichment = parallel_enrich(alert)\n    alert.decision = make_decision(alert)\n    print(f"[*] Decision: {alert.decision}")\n    if alert.decision == "ESCALATE":\n        webhook = os.environ.get("SLACK_WEBHOOK", "")\n        if webhook:\n            send_slack_notification(alert, webhook)\n    return {\n        "alert_id": alert.alert_id,\n        "decision": alert.decision,\n        "enrichment": alert.enrichment,\n    }',
     key_concepts: [
       'Parallel enrichment: Use concurrent.futures.ThreadPoolExecutor to run multiple API calls simultaneously. Enriching 5 IOCs serially takes 10+ seconds; in parallel it takes ~2 seconds.',
       'Timeout handling: Every parallel task needs a timeout. A slow API should not block your entire playbook.',
       'Decision thresholds: Document why you chose specific thresholds (BEC score 70, VT malicious > 3). These numbers should be calibrated against your environment FP rate over time.',
       'Dataclasses: Python dataclasses (from dataclasses import dataclass) give you clean, typed data structures without boilerplate. Better than plain dicts for complex automation objects.',
-      'From the book: Security Automation with Python Chapter 7 Case Study 1 covers exactly this pattern -- automating phishing IR for a financial institution using Python API integrations and parallel processing.'
+      'This automation pattern is widely used in SOC environments -- automating phishing IR for a financial institution using Python API integrations and parallel processing.'
     ]
   }
 ];
@@ -14434,7 +16138,7 @@ function renderAutomationLab() {
     '<div style="font-size:13px;color:var(--text-secondary);line-height:1.9;">' +
     '<strong style="color:var(--accent);">Why SOC automation matters:</strong> ' +
     'A Tier 1 analyst manually enriching 200 alerts per day at 5 minutes each needs 16+ hours. Automation handles the mechanical parts (API calls, data normalization, threshold checks) so analysts spend time on decisions, not data collection. ' +
-    'Based on <em>Security Automation with Python</em> (Corey Charles Sr., Packt 2025): "Security automation provides a scalable solution, enabling continuous monitoring, rapid detection, and efficient response." ' +
+    'Based on Security automation provides a scalable solution, enabling continuous monitoring, rapid detection, and efficient response." ' +
     'The exercises below teach automation patterns that directly apply to SOAR platforms (Splunk SOAR, Palo Alto XSOAR, Microsoft Sentinel playbooks).' +
     '</div></div>' +
 
@@ -14529,7 +16233,7 @@ function renderCloudForensics() {
     '<strong style="color:var(--accent);">Cloud forensics is different from on-premises forensics.</strong> ' +
     'You do not physically seize a server. Logs are ephemeral by default and may not exist at all without prior configuration. ' +
     'The shared responsibility model means the cloud provider controls the physical layer, and you control configuration and application layers. ' +
-    'Based on <em>Cloud Forensics Demystified</em> (Ramakrishnan & Haqanee, Packt 2024): understanding what evidence is available, where it lives, and how long it persists before being overwritten is the foundational skill for cloud DFIR.' +
+    'Based on Understanding what evidence is available, where it lives, and how long it persists before being overwritten is the foundational skill for cloud DFIR.' +
     '</div></div>' +
 
     // Evidence sources table
@@ -14679,7 +16383,219 @@ function toggleCloudScenario(id, btn) {
   el.style.display = shown ? 'none' : 'block';
   if (btn) btn.textContent = shown ? 'Reveal Analysis Notes' : 'Hide Notes';
 }
+// ═══════════════════════════════════════════════════
+// FEEDBACK PANEL
+// ═══════════════════════════════════════════════════
+function toggleFeedbackPanel() {
+  var panel   = document.getElementById('feedback-panel');
+  var overlay = document.getElementById('feedback-overlay');
+  if (!panel || !overlay) return;
+  var isOpen = panel.style.display === 'flex';
+  panel.style.display   = isOpen ? 'none' : 'flex';
+  overlay.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    // Auto-fill current section
+    var activeView = document.querySelector('.view.active');
+    if (activeView) {
+      var viewMap = {
+        'view-orientation':'Orientation','view-guide':'Analyst Guide',
+        'view-alerts':'Alert Queue','view-workbench':'Workbench',
+        'view-ir':'Incident Response','view-detection':'Detection Engineering',
+        'view-hunt':'Threat Hunt','view-forensics':'Forensics Lab',
+        'view-endpoints':'Endpoint Monitor','view-identities':'Identity Dashboard',
+        'view-mitre':'MITRE Navigator','view-metrics':'Metrics',
+        'view-portfolio':'Portfolio Builder','view-dashboard':'Dashboard'
+      };
+      var sectionName = viewMap[activeView.id] || '';
+      var sel = document.querySelector('#feedback-form select[name="section"]');
+      if (sel && sectionName) sel.value = sectionName;
+    }
+    // Auto-fill tier
+    var profile = getProfile();
+    var tierSel = document.querySelector('#feedback-form select[name="analyst_tier"]');
+    if (tierSel) tierSel.value = 'Tier ' + (profile.tier || 1);
+    // Focus message
+    var msg = document.getElementById('feedback-message');
+    if (msg) setTimeout(function(){ msg.focus(); }, 100);
+  }
+}
+
+function highlightFeedbackType() {
+  var typeLabels = ['ftype-bug','ftype-unclear','ftype-feature','ftype-general'];
+  var typeColors = { Bug:'rgba(255,68,68,0.12)', 'Unclear Content':'rgba(255,153,0,0.1)', 'Feature Idea':'rgba(0,212,255,0.1)', General:'rgba(0,255,136,0.08)' };
+  var typeBorders = { Bug:'rgba(255,68,68,0.4)', 'Unclear Content':'rgba(255,153,0,0.35)', 'Feature Idea':'rgba(0,212,255,0.35)', General:'rgba(0,255,136,0.3)' };
+  document.querySelectorAll('#feedback-form input[type="radio"]').forEach(function(radio) {
+    var lbl = radio.parentElement;
+    if (radio.checked) {
+      lbl.style.background = typeColors[radio.value] || 'var(--bg-elevated)';
+      lbl.style.borderColor = typeBorders[radio.value] || 'var(--border)';
+      lbl.style.color = 'var(--text-primary)';
+    } else {
+      lbl.style.background = 'var(--bg-elevated)';
+      lbl.style.borderColor = 'var(--border)';
+      lbl.style.color = 'var(--text-secondary)';
+    }
+  });
+}
+
+// Live character count on feedback textarea
+document.addEventListener('DOMContentLoaded', function() {
+  var ta = document.getElementById('feedback-message');
+  var counter = document.getElementById('feedback-msg-count');
+  if (ta && counter) {
+    ta.addEventListener('input', function() {
+      var len = ta.value.length;
+      counter.textContent = len + ' character' + (len === 1 ? '' : 's');
+      counter.style.color = len >= 20 ? 'var(--green)' : 'var(--text-dim)';
+    });
+  }
+});
+
+function submitFeedback(e) {
+  e.preventDefault();
+  var msg = document.getElementById('feedback-message');
+  var errEl = document.getElementById('feedback-error');
+  var submitBtn = document.getElementById('feedback-submit-btn');
+
+  if (!msg || msg.value.trim().length < 20) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Please write at least 20 characters describing your feedback.';
+    return;
+  }
+  errEl.style.display = 'none';
+  submitBtn.textContent = 'Submitting...';
+  submitBtn.disabled = true;
+
+  var form = document.getElementById('feedback-form');
+  var data = new FormData(form);
+
+  fetch('https://formspree.io/f/xkokabnl', {
+    method: 'POST',
+    body: data,
+    headers: { 'Accept': 'application/json' }
+  }).then(function(response) {
+    if (response.ok) {
+      form.style.display = 'none';
+      document.getElementById('feedback-success').style.display = 'block';
+    } else {
+      errEl.style.display = 'block';
+      errEl.textContent = 'Submission failed. Please try again or email feedback directly to Axis Security Solutions.';
+      submitBtn.textContent = '\u{1F4AC} Submit Feedback';
+      submitBtn.disabled = false;
+    }
+  }).catch(function() {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Network error. Check your connection and try again.';
+    submitBtn.textContent = '\u{1F4AC} Submit Feedback';
+    submitBtn.disabled = false;
+  });
+}
+
+function resetFeedbackForm() {
+  var form = document.getElementById('feedback-form');
+  var success = document.getElementById('feedback-success');
+  var submitBtn = document.getElementById('feedback-submit-btn');
+  if (form) { form.reset(); form.style.display = 'flex'; }
+  if (success) success.style.display = 'none';
+  if (submitBtn) { submitBtn.textContent = '\u{1F4AC} Submit Feedback'; submitBtn.disabled = false; }
+  var counter = document.getElementById('feedback-msg-count');
+  if (counter) { counter.textContent = '0 characters'; counter.style.color = 'var(--text-dim)'; }
+  highlightFeedbackType();
+}
 
 </script>
+
+<!-- FEEDBACK PANEL -->
+<div id="feedback-panel" style="display:none;position:fixed;top:0;right:0;width:380px;height:100vh;background:var(--bg-card);border-left:1px solid var(--border);z-index:1500;box-shadow:-4px 0 24px rgba(0,0,0,0.4);display:none;flex-direction:column;">
+  <div style="background:rgba(0,212,255,0.06);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-weight:700;color:var(--accent);font-size:13px;margin-bottom:2px;">&#128172; Share Feedback</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">AXIS SECURITY SOC LAB -- BETA</div>
+    </div>
+    <button onclick="toggleFeedbackPanel()" style="background:transparent;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px;">&#10005;</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:20px;">
+    <div id="feedback-success" style="display:none;text-align:center;padding:40px 20px;">
+      <div style="font-size:40px;margin-bottom:16px;">&#10003;</div>
+      <div style="font-weight:700;color:var(--green);font-size:15px;margin-bottom:8px;">Feedback Submitted</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;margin-bottom:20px;">Thank you. Your feedback goes directly to the Axis Security Solutions team and helps shape the next version of SOC Lab.</div>
+      <button onclick="resetFeedbackForm()" style="background:transparent;border:1px solid var(--accent);border-radius:2px;padding:6px 16px;font-family:var(--font-mono);font-size:11px;color:var(--accent);cursor:pointer;">Submit Another</button>
+    </div>
+    <form id="feedback-form" action="https://formspree.io/f/xkokabnl" method="POST" onsubmit="submitFeedback(event)" style="display:flex;flex-direction:column;gap:14px;">
+      <input type="hidden" name="_subject" value="SOC Lab Beta Feedback">
+      <input type="hidden" name="platform_version" value="v19">
+      <input type="hidden" id="feedback-current-section" name="current_section" value="">
+
+      <div>
+        <label style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Section You Were In</label>
+        <select name="section" style="width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text-primary);font-family:var(--font-mono);font-size:11px;outline:none;">
+          <option value="">-- Select section --</option>
+          <option value="Orientation">Orientation</option>
+          <option value="Analyst Guide">Analyst Guide</option>
+          <option value="Alert Queue">Alert Queue</option>
+          <option value="Trial Alert">Trial Alert</option>
+          <option value="Incident Response">Incident Response</option>
+          <option value="Detection Engineering">Detection Engineering</option>
+          <option value="Threat Hunt">Threat Hunt</option>
+          <option value="Forensics Lab">Forensics Lab</option>
+          <option value="Endpoint Monitor">Endpoint Monitor</option>
+          <option value="Identity Dashboard">Identity Dashboard</option>
+          <option value="MITRE Navigator">MITRE Navigator</option>
+          <option value="Workbench">Workbench</option>
+          <option value="Portfolio Builder">Portfolio Builder</option>
+          <option value="General / Other">General / Other</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Feedback Type</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <label id="ftype-bug" style="display:flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;padding:8px 10px;cursor:pointer;font-size:11px;color:var(--text-secondary);">
+            <input type="radio" name="feedback_type" value="Bug" style="accent-color:var(--red);" onchange="highlightFeedbackType()"> &#128030; Bug
+          </label>
+          <label id="ftype-unclear" style="display:flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;padding:8px 10px;cursor:pointer;font-size:11px;color:var(--text-secondary);">
+            <input type="radio" name="feedback_type" value="Unclear Content" style="accent-color:var(--orange);" onchange="highlightFeedbackType()"> &#10067; Unclear
+          </label>
+          <label id="ftype-feature" style="display:flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;padding:8px 10px;cursor:pointer;font-size:11px;color:var(--text-secondary);">
+            <input type="radio" name="feedback_type" value="Feature Idea" style="accent-color:var(--accent);" onchange="highlightFeedbackType()"> &#128161; Feature Idea
+          </label>
+          <label id="ftype-general" style="display:flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;padding:8px 10px;cursor:pointer;font-size:11px;color:var(--text-secondary);">
+            <input type="radio" name="feedback_type" value="General" style="accent-color:var(--green);" onchange="highlightFeedbackType()"> &#128172; General
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Your Feedback <span style="color:var(--red);">*</span></label>
+        <textarea name="message" id="feedback-message" placeholder="Describe the issue, idea, or observation. Be as specific as possible -- what were you doing, what did you expect, what happened instead?" required style="width:100%;min-height:120px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;padding:10px;font-family:var(--font-mono);font-size:11px;color:var(--text-primary);resize:vertical;outline:none;box-sizing:border-box;line-height:1.6;"></textarea>
+        <div id="feedback-msg-count" style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-align:right;margin-top:3px;">0 characters</div>
+      </div>
+
+      <div>
+        <label style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Your Tier</label>
+        <select name="analyst_tier" style="width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text-primary);font-family:var(--font-mono);font-size:11px;outline:none;">
+          <option value="Tier 1">Tier 1 (Junior Analyst)</option>
+          <option value="Tier 2">Tier 2 (Senior Analyst)</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Name or Email <span style="color:var(--text-dim);font-size:9px;">(optional -- for follow-up)</span></label>
+        <input type="text" name="contact" placeholder="Leave blank to submit anonymously" style="width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text-primary);font-family:var(--font-mono);font-size:11px;outline:none;box-sizing:border-box;">
+      </div>
+
+      <div id="feedback-error" style="display:none;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.25);border-radius:3px;padding:8px 12px;font-size:11px;color:var(--red);"></div>
+
+      <button type="submit" id="feedback-submit-btn" style="background:var(--accent-glow);border:1px solid var(--accent);border-radius:3px;padding:10px;font-family:var(--font-mono);font-size:12px;color:var(--accent);cursor:pointer;font-weight:700;letter-spacing:0.5px;">
+        &#128172; Submit Feedback
+      </button>
+
+      <div style="font-size:10px;color:var(--text-dim);text-align:center;line-height:1.6;">
+        Feedback goes directly to the Axis Security Solutions team. Anonymous submissions are welcome.
+      </div>
+    </form>
+  </div>
+</div>
+<div id="feedback-overlay" onclick="toggleFeedbackPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:1499;"></div>
 </body>
 </html>
