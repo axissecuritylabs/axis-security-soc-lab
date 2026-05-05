@@ -98,7 +98,7 @@ main.sidebar-hidden{margin-left:0;}
 .status-badge{font-family:var(--font-mono);font-size:9px;padding:2px 8px;border-radius:10px;}
 .status-untriaged{background:rgba(61,100,128,0.3);color:var(--text-dim);border:1px solid var(--border);}
 .status-investigating{background:rgba(255,153,0,0.1);color:var(--orange);border:1px solid rgba(255,153,0,0.3);}
-.status-escalated{background:rgba(255,68,68,0.1);color:var(--red);border:1px solid rgba(255,68,68,0.3);}
+.status-escalated{background:rgba(255,68,68,0.1);color:var(--red);border:1px solid rgba(255,68,68,0.3);}.status-ir_closed{background:rgba(39,174,96,0.1);color:var(--green);border:1px solid rgba(39,174,96,0.3);}
 .status-false_positive{background:rgba(122,173,204,0.1);color:var(--text-secondary);border:1px solid var(--border-bright);}
 .status-needs_monitoring{background:rgba(255,224,102,0.1);color:var(--yellow);border:1px solid rgba(255,224,102,0.3);}
 .tier-dot{display:inline-block;width:18px;height:18px;border-radius:50%;font-family:var(--font-mono);font-size:10px;font-weight:700;text-align:center;line-height:18px;}
@@ -2372,51 +2372,143 @@ var currentAlertId = null;
 function renderAlerts(filter) {
   if (filter !== undefined) currentFilter = filter;
   var alertState = getAlerts();
-  var filtered = ALERT_LIBRARY;
   var LABEL_FILTERS = ['BENIGN','CTI','CROWDSTRIKE_IOA','SANDBOX','ZERO_DAY'];
   var SEV_FILTERS   = ['Critical','High','Medium','Low','Informational'];
-  var SRC_FILTERS   = ['EDR','Identity','Network','Cloud','Email','Insider','Threat Intel','Endpoint'];
-  if (currentFilter === 'all') {
-    // no filter
-  } else if (currentFilter === 'untriaged') {
-    filtered = filtered.filter(function(a) { return !alertState[a.id] || alertState[a.id].status === 'untriaged'; });
-  } else if (LABEL_FILTERS.indexOf(currentFilter) !== -1) {
-    filtered = filtered.filter(function(a) { return a.label === currentFilter; });
-  } else if (SEV_FILTERS.indexOf(currentFilter) !== -1) {
-    filtered = filtered.filter(function(a) { return a.severity === currentFilter; });
-  } else {
-    filtered = filtered.filter(function(a) { return a.source === currentFilter; });
-  }
+
+  // Apply filter
+  var filtered = ALERT_LIBRARY.filter(function(a) {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'untriaged') return !alertState[a.id] || alertState[a.id].status === 'untriaged';
+    if (LABEL_FILTERS.indexOf(currentFilter) !== -1) return a.label === currentFilter;
+    if (SEV_FILTERS.indexOf(currentFilter) !== -1) return a.severity === currentFilter;
+    return a.source === currentFilter;
+  });
+
   var showEl = document.getElementById('alert-showing');
   var totalEl = document.getElementById('alert-total');
   if (showEl) showEl.textContent = filtered.length;
   if (totalEl) totalEl.textContent = ALERT_LIBRARY.length;
+
   var tbody = document.getElementById('alert-tbody');
   if (!tbody) return;
+
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-dim);">No alerts match this filter.</td></tr>';
+    updateNavBadges();
     return;
   }
-  tbody.innerHTML = filtered.map(function(alert) {
+
+  // ── Bucket alerts into three sections ────────────────────────────
+  var CLOSED_STATUSES = ['false_positive','true_positive','needs_monitoring','investigating'];
+  // "closed" = has a final verdict (not escalated, not untriaged, not reinvestigate)
+  var FINAL_STATUSES  = ['false_positive','true_positive','needs_monitoring'];
+
+  var unclaimed  = [];
+  var inProgress = [];
+  var closed     = [];
+
+  filtered.forEach(function(a) {
+    var st = (alertState[a.id] || {}).status || 'untriaged';
+    if (st === 'untriaged') {
+      unclaimed.push(a);
+    } else if (st === 'escalated' || st === 'reinvestigate' || st === 'investigating') {
+      inProgress.push(a);
+    } else {
+      closed.push(a);
+    }
+  });
+
+  // ── Sort each section: Critical first, then High, Medium, Low ────
+  var sevOrder = { Critical:0, High:1, Medium:2, Low:3, Informational:4 };
+  function sortBySev(arr) {
+    return arr.slice().sort(function(a,b) {
+      return (sevOrder[a.severity]||9) - (sevOrder[b.severity]||9);
+    });
+  }
+  unclaimed  = sortBySev(unclaimed);
+  inProgress = sortBySev(inProgress);
+  closed     = sortBySev(closed);
+
+  // ── Row builder ───────────────────────────────────────────────────
+  function buildRow(alert) {
     var state = alertState[alert.id] || { status:'untriaged' };
-    var rowClass = state.status !== 'untriaged' ? 'investigated' : '';
+    var st = state.status || 'untriaged';
     var labelBadge = alert.label ? '<span class="label-badge label-' + alert.label + '">' + alert.label.replace(/_/g,' ') + '</span>' : '';
-    return '<tr class="' + rowClass + '" data-alert-id="' + alert.id + '" onclick="openAlert(\'' + alert.id + '\')">' +
+    var deescBtn = (st === 'escalated')
+      ? ' <button onclick="event.stopPropagation();showDeEscalateModal(\'' + alert.id + '\')" style="background:transparent;border:1px solid var(--orange);border-radius:2px;color:var(--orange);font-family:var(--font-mono);font-size:8px;padding:1px 5px;cursor:pointer;margin-left:4px;" title="Rescind escalation">&#8617;</button>'
+      : '';
+    return '<tr class="' + (st !== 'untriaged' ? 'investigated' : '') + '" data-alert-id="' + alert.id + '" onclick="openAlert(\'' + alert.id + '\')">' +
       '<td><span class="sev-badge ' + getSevClass(alert.severity) + '">' + alert.severity + '</span></td>' +
       '<td style="color:var(--text-primary);font-weight:500;max-width:280px;font-size:12px;">' + alert.title + '</td>' +
       '<td><span class="source-badge">' + alert.source + '</span></td>' +
       '<td><span class="tag mitre" style="font-size:9px;">' + alert.mitre_id + '</span></td>' +
       '<td>' + (alert.label && alert.label !== 'BENIGN' ? labelBadge : '') + '</td>' +
       '<td><span class="tier-dot t' + (alert.tier||1) + '">' + (alert.tier||1) + '</span></td>' +
-      '<td class="status-cell"><span class="status-badge status-' + state.status + '">' + state.status.replace(/_/g,' ') + '</span>' +
-      (state.status === 'escalated' ? ' <button onclick="event.stopPropagation();showDeEscalateModal(\'' + a.id + '\')">&#8617;</button>' : '') +
-      '</td>' +
+      '<td class="status-cell"><span class="status-badge status-' + st + '">' + ({'untriaged':'Untriaged','investigating':'Investigating','escalated':'Escalated','false_positive':'False Positive','true_positive':'True Positive','needs_monitoring':'Needs Monitoring','reinvestigate':'Reinvestigate','ir_closed':'IR Closed'}[st] || st.replace(/_/g,' ')) + '</span>' + deescBtn + '</td>' +
       '</tr>';
-  }).join('');
+  }
+
+  // ── Section header builder ────────────────────────────────────────
+  function sectionHeader(label, count, color, icon, defaultOpen) {
+    var id = 'section-' + label.replace(/\s+/g,'-').toLowerCase();
+    return '<tr class="queue-section-header" onclick="toggleQueueSection(\'' + id + '\')" style="cursor:pointer;background:' + color + ';border-top:2px solid rgba(255,255,255,0.08);">' +
+      '<td colspan="7" style="padding:8px 12px;font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,0.7);letter-spacing:1.2px;text-transform:uppercase;user-select:none;">' +
+        icon + '&nbsp; ' + label + ' <span style="opacity:0.6;margin-left:8px;">(' + count + ')</span>' +
+        '<span id="' + id + '-chevron" style="float:right;opacity:0.5;">' + (defaultOpen ? '&#9650;' : '&#9660;') + '</span>' +
+      '</td>' +
+    '</tr>' +
+    '<tbody id="' + id + '" style="display:' + (defaultOpen ? 'table-row-group' : 'none') + ';">';
+  }
+
+  // ── Assemble sections ─────────────────────────────────────────────
+  var html = '';
+
+  // UNCLAIMED
+  if (currentFilter === 'all' || unclaimed.length > 0) {
+    html += sectionHeader('Unclaimed', unclaimed.length, 'rgba(231,76,60,0.12)', '&#128308;', true);
+    if (unclaimed.length === 0) {
+      html += '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);font-size:11px;">No unclaimed alerts -- well done.</td></tr>';
+    } else {
+      html += unclaimed.map(buildRow).join('');
+    }
+    html += '</tbody>';
+  }
+
+  // IN PROGRESS
+  if (currentFilter === 'all' || inProgress.length > 0) {
+    html += sectionHeader('In Progress', inProgress.length, 'rgba(230,126,34,0.10)', '&#128992;', true);
+    if (inProgress.length === 0) {
+      html += '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);font-size:11px;">No alerts currently in progress.</td></tr>';
+    } else {
+      html += inProgress.map(buildRow).join('');
+    }
+    html += '</tbody>';
+  }
+
+  // CLOSED
+  if (currentFilter === 'all' || closed.length > 0) {
+    html += sectionHeader('Closed', closed.length, 'rgba(39,174,96,0.08)', '&#9989;', false);
+    if (closed.length === 0) {
+      html += '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);font-size:11px;">No closed alerts yet.</td></tr>';
+    } else {
+      html += closed.map(buildRow).join('');
+    }
+    html += '</tbody>';
+  }
+
+  tbody.innerHTML = html;
   updateNavBadges();
   setTimeout(updateAlertAging, 100);
 }
 
+function toggleQueueSection(id) {
+  var body = document.getElementById(id);
+  var chevron = document.getElementById(id + '-chevron');
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'table-row-group';
+  if (chevron) chevron.innerHTML = open ? '&#9660;' : '&#9650;';
+}
 function filterAlerts(filter, btn) {
   document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
@@ -4249,7 +4341,7 @@ function alertOnCriticalEscalation(alert) {
     severity: 'critical',
     title: 'ALERT ESCALATED TO IR',
     body: '<strong>' + alert.title + '</strong><br><br>This alert has been escalated to full Incident Response. The IR Console is now active. Your SLA clock has started.<br><br>&#9201; Containment must begin immediately.',
-    actions: [{ label: 'Open IR Console', onclick: "navigate('ir')", primary: true }]
+    actions: [{ label: 'Open IR Console', onclick: "navigate('ir');renderIRConsole()", primary: true }]
   });
 }
 
@@ -4507,11 +4599,6 @@ function confirmDeEscalate(alertId) {
 }
 
 // ── Storage helpers for IR ────────────────────────
-function getIRCases()   { return DB.get('ircases')   || {}; }
-function saveIRCases(v) { DB.set('ircases', v); }
-function getIRActions() { return DB.get('iractions') || {}; }
-function saveIRActions(v){ DB.set('iractions', v); }
-
 // ═══════════════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════════════
@@ -8683,6 +8770,17 @@ function submitLessonsLearned(alertId) {
   ircases[alertId].submitted = true;
   ircases[alertId].submitted_at = Date.now();
   saveIRCases(ircases);
+
+  // Update alert status to ir_closed so queue shows it as Closed
+  var alertState = getAlerts();
+  if (alertState[alertId]) {
+    alertState[alertId].status = 'ir_closed';
+    alertState[alertId].ir_closed_at = Date.now();
+  }
+  saveAlerts(alertState);
+
+  // Stop the SLA clock -- incident is closed
+  stopIRClock();
 
   // Log it
   logIRAction(alertId, 'preserve_evidence', 'Lessons Learned Report submitted', 'lessons_learned');
